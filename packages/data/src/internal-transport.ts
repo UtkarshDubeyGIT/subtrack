@@ -28,6 +28,7 @@ const TABLES = new Set([
   "user_preferences",
 ]);
 const RPCS = new Set([
+  "rpc/acknowledge_reminder_delivery",
   "rpc/calendar_events_page",
   "rpc/renewal_history_page",
   "rpc/subscriptions_page",

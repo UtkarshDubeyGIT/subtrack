@@ -2,7 +2,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public, pg_catalog;
 
-select plan(34);
+select plan(36);
 
 -- Parts of this suite impersonate a client with `set local role authenticated`
 -- and then call pgTAP assertions. pgTAP is installed in `extensions`, which
@@ -342,6 +342,24 @@ select throws_ok(
   'P0001',
   'reminder_acknowledge_invalid_error_code',
   'a malformed error code is rejected'
+);
+
+select throws_ok(
+  $$select public.acknowledge_reminder_delivery(
+      current_setting('subtrack.test_ack_key'), 'failed'
+    )$$,
+  'P0001',
+  'reminder_acknowledge_invalid_error_code',
+  'a failure report without an error code is rejected'
+);
+
+select throws_ok(
+  $$select public.acknowledge_reminder_delivery(
+      current_setting('subtrack.test_ack_key'), 'delivered', 'SOME_CODE'
+    )$$,
+  'P0001',
+  'reminder_acknowledge_invalid_error_code',
+  'an error code on a non-failure acknowledgement is rejected'
 );
 
 select pg_temp.act_as('pgtap_intruder');

@@ -328,6 +328,16 @@ begin
     raise exception 'reminder_acknowledge_invalid_state';
   end if;
 
+  -- A failure report must carry a code and only a failure may carry one:
+  -- the client data layer's row validation enforces exactly this pairing,
+  -- so a response violating it would be rejected by the caller's own
+  -- schema after a successful write.
+  if p_state = 'failed' and p_error_code is null then
+    raise exception 'reminder_acknowledge_invalid_error_code';
+  end if;
+  if p_state <> 'failed' and p_error_code is not null then
+    raise exception 'reminder_acknowledge_invalid_error_code';
+  end if;
   if p_error_code is not null
      and p_error_code !~ '^[A-Z0-9_]{1,64}$'
   then

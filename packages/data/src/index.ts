@@ -1200,7 +1200,60 @@ export class ReminderRepository {
       },
     );
   }
+
+  /**
+   * Advance one of the caller's own deliveries through the server-validated
+   * acknowledgement function. Direct writes to reminder_deliveries are denied
+   * to clients by policy; this RPC is the only legal path, and it enforces
+   * ownership from the verified token plus the legal state transitions.
+   */
+  async acknowledgeDelivery(
+    input: z.input<typeof reminderAcknowledgementSchema>,
+  ): Promise<ReminderDelivery> {
+    const acknowledgement = validateWrite(() =>
+      reminderAcknowledgementSchema.parse(input),
+    );
+    const response = await this.#client.request(
+      "rpc/acknowledge_reminder_delivery",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          p_idempotency_key: acknowledgement.idempotencyKey,
+          p_state: acknowledgement.state,
+          p_error_code: acknowledgement.errorCode ?? null,
+        }),
+      },
+    );
+    return validatePersisted(() =>
+      deliveryFromRow(reminderDeliveryRowSchema.parse(response)),
+    );
+  }
 }
+
+const reminderAcknowledgementSchema = z
+  .object({
+    idempotencyKey: z.string().min(1).max(256),
+    state: z.enum(["claimed", "delivered", "failed", "canceled"]),
+    errorCode: z
+      .string()
+      .regex(/^[A-Z0-9_]{1,64}$/)
+      .optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    // Mirrors the server rule: a failure must carry a code and only a
+    // failure may carry one. Enforcing it here keeps an illegal pairing
+    // from ever leaving the process.
+    const legal =
+      value.state === "failed"
+        ? value.errorCode !== undefined
+        : value.errorCode === undefined;
+    if (!legal) context.addIssue({ code: "custom", message: "invalid" });
+  });
+
+export type ReminderAcknowledgement = z.input<
+  typeof reminderAcknowledgementSchema
+>;
 
 export type FxRate = Readonly<{
   baseCurrency: string;

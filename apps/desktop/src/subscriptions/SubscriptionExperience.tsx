@@ -35,6 +35,8 @@ import {
   createBillingDateProposalRange,
   isBillingDateProposalValid,
 } from "./calendar-agenda-model";
+import { RemindersExperience } from "../reminders/RemindersExperience";
+import type { RemindersRuntime } from "../reminders/reminders-runtime";
 
 type EditorState = Readonly<{
   mode: "create" | "edit";
@@ -61,6 +63,7 @@ export function SubscriptionExperience({
   today,
   createId = defaultSubscriptionId,
   fxRates = [],
+  remindersRuntime,
 }: Readonly<{
   runtime: SubscriptionsRuntime;
   homeCurrency: string;
@@ -75,6 +78,8 @@ export function SubscriptionExperience({
    * unconverted instead of being silently omitted from the totals.
    */
   fxRates?: readonly FxRateInput[];
+  /** Due-reminder delivery surface; absent in builds without data sync. */
+  remindersRuntime?: RemindersRuntime;
 }>) {
   const [snapshot, setSnapshot] = useState<SubscriptionsSnapshot>(
     runtime.snapshot(),
@@ -387,6 +392,18 @@ export function SubscriptionExperience({
         <output className="success-announcement" aria-live="polite">
           {snapshot.announcement}
         </output>
+      ) : null}
+
+      {remindersRuntime ? (
+        <RemindersExperience
+          runtime={remindersRuntime}
+          locale={displayLocale}
+          nameOf={(subscriptionId) =>
+            snapshot.items.find(
+              ({ record }) => record.subscription.id === subscriptionId,
+            )?.record.subscription.serviceName
+          }
+        />
       ) : null}
 
       <SpendSummary view={spendView} />

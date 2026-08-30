@@ -7,6 +7,7 @@ import { createDesktopPreferencesRuntime } from "./account/preferences-compositi
 import { createDesktopAuthRuntime } from "./auth/desktop-auth";
 import { deliverAuthCallbacks } from "./auth/deep-link-ingress";
 import { createDesktopSubscriptionsRuntime } from "./subscriptions/subscriptions-composition";
+import { createDesktopRemindersRuntime } from "./reminders/reminders-composition";
 import "./styles.css";
 
 const runtime = createDesktopAuthRuntime(import.meta.env, { invoke, openUrl });
@@ -19,6 +20,9 @@ const subscriptionsRuntime = createDesktopSubscriptionsRuntime(
     accessToken: () => runtime.accessTokenLease(),
   },
 );
+const remindersRuntime = createDesktopRemindersRuntime(import.meta.env, {
+  accessToken: () => runtime.accessTokenLease(),
+});
 void configureDeepLinkIngress();
 
 async function configureDeepLinkIngress() {
@@ -39,5 +43,6 @@ createRoot(root).render(
     runtime={runtime}
     preferencesRuntime={preferencesRuntime}
     subscriptionsRuntime={subscriptionsRuntime}
+    remindersRuntime={remindersRuntime}
   />,
 );
