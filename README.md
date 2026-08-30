@@ -8,7 +8,7 @@ Built as a Tauri 2 + React 19 desktop application over a Supabase Postgres data 
 authentication handled by Clerk through your system browser.
 
 > **Status:** pre-1.0. The domain model, data plane, authentication, subscription management, and
-> renewal calendar are implemented and tested. Reminder *delivery*, FX rate ingestion, data export,
+> renewal calendar are implemented and tested. Reminder _delivery_, FX rate ingestion, data export,
 > and account deletion are not yet shipped. See [Roadmap to 1.0](#roadmap-to-10).
 
 ## Why manual entry
@@ -48,11 +48,11 @@ scripts/              Hosted-configuration proof tooling
 
 Each desktop feature is split three ways, and new features should follow the same shape:
 
-| File | Responsibility |
-| --- | --- |
-| `*-runtime.ts` | State machine and behaviour. Framework-free and unit-tested directly. |
+| File               | Responsibility                                                        |
+| ------------------ | --------------------------------------------------------------------- |
+| `*-runtime.ts`     | State machine and behaviour. Framework-free and unit-tested directly. |
 | `*-composition.ts` | Wiring: builds a runtime from environment and transport dependencies. |
-| `*Experience.tsx` | React rendering only. |
+| `*Experience.tsx`  | React rendering only.                                                 |
 
 ### Security model
 
@@ -85,13 +85,13 @@ Read before changing authentication or the data plane:
 
 ## Prerequisites
 
-| Requirement | Needed for |
-| --- | --- |
-| Node.js 22 | All JavaScript tooling (CI pins 22; some dev dependencies reject 24.0–24.14) |
-| Rust stable + platform prerequisites | Building or running the Tauri shell |
-| Docker | Local Supabase, `test:db`, and pgTAP suites |
-| Supabase CLI | Local stack and hosted configuration reconciliation |
-| `cargo-audit`, `gitleaks` | The two corresponding security scripts |
+| Requirement                          | Needed for                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| Node.js 22                           | All JavaScript tooling (CI pins 22; some dev dependencies reject 24.0–24.14) |
+| Rust stable + platform prerequisites | Building or running the Tauri shell                                          |
+| Docker                               | Local Supabase, `test:db`, and pgTAP suites                                  |
+| Supabase CLI                         | Local stack and hosted configuration reconciliation                          |
+| `cargo-audit`, `gitleaks`            | The two corresponding security scripts                                       |
 
 Platform support is currently macOS and Windows — the keychain integration enables only the Apple
 and Windows native backends.
@@ -105,12 +105,12 @@ cp .env.example .env
 
 Then fill in `.env`:
 
-| Variable | Meaning |
-| --- | --- |
-| `VITE_AUTH_BROKER_URL` | Exact HTTPS base URL of the auth broker. No secrets. |
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable key. **Never** a service-role key. |
-| `CLERK_FRONTEND_API_DOMAIN` | Clerk Frontend API domain, used by third-party auth config |
+| Variable                        | Meaning                                                    |
+| ------------------------------- | ---------------------------------------------------------- |
+| `VITE_AUTH_BROKER_URL`          | Exact HTTPS base URL of the auth broker. No secrets.       |
+| `VITE_SUPABASE_URL`             | Supabase project URL                                       |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable key. **Never** a service-role key.             |
+| `CLERK_FRONTEND_API_DOMAIN`     | Clerk Frontend API domain, used by third-party auth config |
 
 The Supabase host also appears in two static files that cannot read environment variables at
 runtime, and both must match your environment or the packaged app will fail:
@@ -156,17 +156,17 @@ security problem.
 
 ## Roadmap to 1.0
 
-| Area | State |
-| --- | --- |
-| Domain model, data plane, RLS, pgTAP suites | Implemented |
-| Clerk sign-in, auth broker, keychain session vault | Implemented |
-| Subscription create / edit / lifecycle / delete | Implemented |
-| Renewal calendar with server-bounded queries | Implemented |
-| Preferences and onboarding | Implemented |
-| Reminder computation and delivery | **Not shipped** — schema exists, nothing computes or delivers |
-| FX rate ingestion and converted spend totals | **Not shipped** — table and repository exist, no feed |
-| Data export and account deletion | **Not shipped** |
-| Signed installers and auto-update | **Not shipped** |
+| Area                                               | State                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------- |
+| Domain model, data plane, RLS, pgTAP suites        | Implemented                                                   |
+| Clerk sign-in, auth broker, keychain session vault | Implemented                                                   |
+| Subscription create / edit / lifecycle / delete    | Implemented                                                   |
+| Renewal calendar with server-bounded queries       | Implemented                                                   |
+| Preferences and onboarding                         | Implemented                                                   |
+| Reminder computation and delivery                  | **Not shipped** — schema exists, nothing computes or delivers |
+| FX rate ingestion and converted spend totals       | **Not shipped** — table and repository exist, no feed         |
+| Data export and account deletion                   | **Not shipped**                                               |
+| Signed installers and auto-update                  | **Not shipped**                                               |
 
 ## License
 

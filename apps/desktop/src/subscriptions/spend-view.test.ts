@@ -86,13 +86,19 @@ describe("exact decimal rendering", () => {
 describe("money formatting", () => {
   it("formats with the currency's own exponent", () => {
     expect(
-      formatExactMoney({ minorUnits: 123456, currency: "USD", exponent: 2 }, "en-US"),
+      formatExactMoney(
+        { minorUnits: 123456, currency: "USD", exponent: 2 },
+        "en-US",
+      ),
     ).toBe("$1,234.56");
   });
 
   it("formats a zero-exponent currency without a fraction", () => {
     expect(
-      formatExactMoney({ minorUnits: 2999, currency: "JPY", exponent: 0 }, "en-US"),
+      formatExactMoney(
+        { minorUnits: 2999, currency: "JPY", exponent: 0 },
+        "en-US",
+      ),
     ).toBe("¥2,999");
   });
 

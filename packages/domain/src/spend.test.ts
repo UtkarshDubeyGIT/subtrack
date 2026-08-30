@@ -88,8 +88,9 @@ describe("currency conversion", () => {
   });
 
   it("leaves an amount unchanged at unit rate", () => {
-    expect(convertMoney(money(1234, "USD"), "USD", parseRate("1")).minorUnits)
-      .toBe(1234);
+    expect(
+      convertMoney(money(1234, "USD"), "USD", parseRate("1")).minorUnits,
+    ).toBe(1234);
   });
 });
 
@@ -184,10 +185,7 @@ describe("cadence normalization", () => {
 describe("spend contribution", () => {
   it.each([
     [{ status: "active", since: "2026-01-01" }, true],
-    [
-      { status: "trial", since: "2026-01-01", trialEndsOn: "2026-02-01" },
-      true,
-    ],
+    [{ status: "trial", since: "2026-01-01", trialEndsOn: "2026-02-01" }, true],
     [{ status: "paused", since: "2026-01-01" }, false],
     [
       { status: "canceled", since: "2026-01-01", accessEndsOn: "2026-02-01" },

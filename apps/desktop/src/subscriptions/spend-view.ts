@@ -54,16 +54,25 @@ export function exactDecimalString(amount: MoneyLike): string {
 export function formatExactMoney(amount: MoneyLike, locale: string): string {
   const value = exactDecimalString(amount);
   try {
-    return new Intl.NumberFormat(locale, {
+    const formatter = new Intl.NumberFormat(locale, {
       style: "currency",
       currency: amount.currency,
       minimumFractionDigits: amount.exponent,
       maximumFractionDigits: amount.exponent,
-    }).format(value);
+    });
+    // Intl.NumberFormat accepts an arbitrary-precision decimal string at
+    // runtime (ES2023). This project compiles against the ES2022 lib, whose
+    // typings predate that overload, so the capability is declared locally
+    // rather than widening `lib` for every package. Passing the string is
+    // what keeps large totals exact; a number would reintroduce float error.
+    return (formatter as unknown as ExactNumberFormat).format(value);
   } catch {
     return `${value} ${amount.currency}`;
   }
 }
+
+/** The ES2023 arbitrary-precision string overload of `Intl.NumberFormat`. */
+type ExactNumberFormat = Readonly<{ format(value: string): string }>;
 
 /**
  * Derive the spend summary card model.

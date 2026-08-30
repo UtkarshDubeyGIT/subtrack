@@ -104,7 +104,7 @@ export function parseRate(rate: string): ScaledRate {
   if (!match) {
     throw new Error(`Unsupported rate format: ${rate}`);
   }
-  const [, sign, whole, fraction = ""] = match;
+  const [, sign = "", whole = "0", fraction = ""] = match;
   if (fraction.length > RATE_SCALE_EXPONENT) {
     throw new Error(
       `rate exceeds ${RATE_SCALE_EXPONENT} decimal places: ${rate}`,
@@ -348,7 +348,6 @@ export function summarizeSpend(input: {
   readonly homeCurrency: string;
 }): SpendSummary {
   const homeCurrency = normalizeCurrency(input.homeCurrency);
-  const exponent = currencyExponent(homeCurrency);
   const table = createRateTable(input.rates, homeCurrency);
 
   let annualMinor = 0n;
@@ -381,19 +380,21 @@ export function summarizeSpend(input: {
   }
 
   const monthlyMinor = divideRounded(annualMinor, 12n);
+  // Built through createMoney so the totals carry the same validation and
+  // exponent metadata as every other amount in the domain.
+  const annual = createMoney({
+    minorUnits: Number(annualMinor),
+    currency: homeCurrency,
+  });
+  const monthly = createMoney({
+    minorUnits: Number(monthlyMinor),
+    currency: homeCurrency,
+  });
 
   return {
-    homeCurrency,
-    monthly: {
-      minorUnits: Number(monthlyMinor),
-      currency: homeCurrency,
-      exponent,
-    },
-    annual: {
-      minorUnits: Number(annualMinor),
-      currency: homeCurrency,
-      exponent,
-    },
+    homeCurrency: annual.currency,
+    monthly,
+    annual,
     countedSubscriptionIds: counted,
     unconverted,
   };
