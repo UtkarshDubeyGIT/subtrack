@@ -132,3 +132,17 @@ The linked development project reports PostgreSQL 17.6 and is authoritative for 
 setting. `supabase/config.toml` therefore declares major 17. The disposable renewal migration chain
 uses a Supabase PostgreSQL 17 image and fails before startup when the config, image tag, or running
 server major diverges.
+
+## Reminder acknowledgement RPC
+
+`public.acknowledge_reminder_delivery(text, text, text)` is the one reviewed addition to the
+security-definer functions executable by `authenticated` (pinned by
+`supabase/tests/cloud_data_plane_rls.sql`). It exists because `reminder_deliveries` denies all
+direct client writes: the function derives ownership from the verified token via
+`private.current_clerk_subject()` rather than from any argument, permits only the
+pending/claimed to claimed/delivered/failed/canceled transitions, and requires an error code
+exactly when a failure is being reported. The reminder engine's own computation runs entirely
+server-side in `reminder_private` and is documented in
+`supabase/migrations/20260830100000_reminder_engine.sql`; its invariants — including that a
+client spoofing the engine's session flag gains nothing — are pinned by
+`supabase/tests/reminder_engine.sql`.
