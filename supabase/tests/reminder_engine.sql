@@ -166,7 +166,10 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from public.reminder_deliveries where state <> 'pending'),
+  (
+    select count(*)::integer from public.reminder_deliveries d
+    where d.owner_user_id = 'pgtap_owner' and d.state <> 'pending'
+  ),
   0,
   'materialization only ever produces pending deliveries'
 );
@@ -232,8 +235,11 @@ select is(
 -- ---------------------------------------------------------------------------
 
 select is(
-  (select array_agg(distinct d.channel order by d.channel)
-   from public.reminder_deliveries d),
+  (
+    select array_agg(distinct d.channel order by d.channel)
+    from public.reminder_deliveries d
+    where d.owner_user_id = 'pgtap_owner'
+  ),
   array['native'],
   'with email reminders disabled only the native channel is scheduled'
 );
@@ -432,7 +438,7 @@ select is(
 -- No backfill into the past
 -- ---------------------------------------------------------------------------
 
-delete from public.reminder_deliveries;
+delete from public.reminder_deliveries where owner_user_id = 'pgtap_owner';
 
 select pg_temp.act_as('pgtap_owner');
 set local role authenticated;
@@ -454,7 +460,8 @@ select ok(
 select is(
   (
     select count(*)::integer from public.reminder_deliveries d
-    where d.scheduled_for < statement_timestamp() - interval '1 day'
+    where d.owner_user_id = 'pgtap_owner'
+      and d.scheduled_for < statement_timestamp() - interval '1 day'
   ),
   0,
   'no reminder is created for a send moment that has already passed'

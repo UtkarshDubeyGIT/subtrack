@@ -16,12 +16,16 @@
 --      by `postgres` is consequently *also* denied unless a policy admits it.
 --
 -- So the engine's own access is granted explicitly and narrowly: a policy
--- scoped to `postgres` that additionally requires a session flag which only
--- the functions below set, via a function-local `SET`. The flag is not
--- settable by `authenticated` through any client path, and the client-facing
--- denial policies are left exactly as they are. Where the invoking role
--- already holds BYPASSRLS the policy is simply redundant, so this works on
--- both a vanilla server and a hosted project without assuming either.
+-- scoped to `postgres` that additionally requires a session flag which the
+-- functions below set transaction-locally at the top of their bodies. The
+-- flag is deliberately NOT a function-level `SET` clause: attaching a custom
+-- parameter to a function requires GRANT SET ON PARAMETER since PostgreSQL
+-- 15, which the non-superuser role applying migrations on a Supabase stack
+-- does not hold. Any role can set the flag in its own session; that buys a
+-- client nothing, because the policies admitting it are restricted to the
+-- postgres role and client roles hold no write grant at all. Where the
+-- invoking role already holds BYPASSRLS the policy is simply redundant, so
+-- this works on both a vanilla server and a hosted project.
 
 begin;
 
@@ -128,11 +132,19 @@ create function reminder_private.materialize_due_reminders(
   language plpgsql
   security definer
   set search_path to ''
-  set "subtrack.reminder_engine" to 'on'
 as $function$
 declare
   inserted_count integer;
 begin
+  -- The engine flag is set in-body rather than as a function SET clause:
+  -- attaching a custom parameter to a function requires GRANT SET ON
+  -- PARAMETER since PostgreSQL 15, which the non-superuser role applying
+  -- migrations on a hosted or local Supabase stack does not have. A
+  -- transaction-local set_config needs no privilege, and the wider scope is
+  -- harmless: the policies admitting this flag are restricted to the
+  -- postgres role, so the flag grants nothing to any client role even if it
+  -- remains set for the rest of the transaction.
+  perform pg_catalog.set_config('subtrack.reminder_engine', 'on', true);
   if horizon_days < 1 or horizon_days > 400 then
     raise exception 'horizon_days out of range: %', horizon_days;
   end if;
@@ -231,11 +243,11 @@ create function reminder_private.cancel_orphaned_reminders()
   language plpgsql
   security definer
   set search_path to ''
-  set "subtrack.reminder_engine" to 'on'
 as $function$
 declare
   canceled_count integer;
 begin
+  perform pg_catalog.set_config('subtrack.reminder_engine', 'on', true);
   with canceled as (
     update public.reminder_deliveries d
     set state = 'canceled',
@@ -312,13 +324,13 @@ create function public.acknowledge_reminder_delivery(
   language plpgsql
   security definer
   set search_path to ''
-  set "subtrack.reminder_engine" to 'on'
 as $function$
 declare
   v_owner text;
   v_current text;
   v_row public.reminder_deliveries;
 begin
+  perform pg_catalog.set_config('subtrack.reminder_engine', 'on', true);
   v_owner := private.current_clerk_subject();
   if v_owner is null then
     raise exception 'reminder_acknowledge_unauthorized';
