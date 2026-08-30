@@ -116,8 +116,13 @@ comment on view reminder_private.effective_reminder_plan is
 -- Materializer
 -- ---------------------------------------------------------------------------
 
+-- The default horizon must exceed the longest legal lead time (365 days,
+-- enforced by reminder_overrides_leads_valid). A shorter horizon loses
+-- reminders permanently: an occurrence outside the horizon is not expanded,
+-- and by the time it enters the horizon the send moment for a long lead is
+-- already in the past, where the no-backfill rule correctly refuses it.
 create function reminder_private.materialize_due_reminders(
-  horizon_days integer default 45,
+  horizon_days integer default 400,
   send_hour integer default 9
 ) returns integer
   language plpgsql

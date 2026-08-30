@@ -2,7 +2,7 @@ begin;
 set local role postgres;
 set local search_path = extensions, public, pg_catalog;
 
-select plan(30);
+select plan(34);
 
 -- Parts of this suite impersonate a client with `set local role authenticated`
 -- and then call pgTAP assertions. pgTAP is installed in `extensions`, which
@@ -10,7 +10,7 @@ select plan(30);
 -- resolve. Granting usage for the duration of this transaction keeps the
 -- impersonation honest without changing anything under test; the rollback at
 -- the end of the file reverts it.
-grant usage on schema extensions to authenticated;
+grant usage on schema extensions to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- Structure
@@ -96,7 +96,14 @@ insert into public.subscriptions (
   ('sub_pre', 'recurring', 'Pre DST', 1000, 'USD', 'America/New_York',
    'active', '2026-01-01', '2027-03-20', '2027-03-20', 'month', 1),
   ('sub_post', 'recurring', 'Post DST', 1000, 'USD', 'America/New_York',
-   'active', '2026-01-01', '2027-03-28', '2027-03-28', 'month', 1);
+   'active', '2026-01-01', '2027-03-28', '2027-03-28', 'month', 1),
+  -- Renews 90 days out with a 60-day lead below: its send moment is 30 days
+  -- from now, which the default horizon must cover or the reminder is lost.
+  ('sub_longlead', 'recurring', 'Long Lead', 1000, 'USD', 'UTC',
+   'active', '2026-01-01', current_date + 90, current_date + 90, 'year', 1);
+
+insert into public.reminder_overrides (subscription_id, lead_days, channels)
+values ('sub_longlead', array[60]::smallint[], array['native']::text[]);
 
 -- ---------------------------------------------------------------------------
 -- The client write path stays closed
@@ -115,19 +122,45 @@ select throws_ok(
   'an authenticated client cannot insert a reminder delivery'
 );
 
+-- Custom settings are settable by any role, so a hostile client can set the
+-- engine flag. It must buy them nothing: the engine policies are scoped to
+-- the postgres role, and the client role holds no write grant at all.
+select set_config('subtrack.reminder_engine', 'on', true);
+
+select throws_ok(
+  $$insert into public.reminder_deliveries (
+      owner_user_id, idempotency_key, subscription_id, occurrence_date,
+      channel, state, scheduled_for
+    ) values (
+      'pgtap_owner', 'forged2', 'sub_pre', '2027-03-20',
+      'native', 'pending', statement_timestamp()
+    )$$,
+  '42501',
+  null,
+  'spoofing the engine flag does not open the client insert path'
+);
+
+select throws_ok(
+  $$update public.reminder_deliveries set state = 'canceled'$$,
+  '42501',
+  null,
+  'spoofing the engine flag does not open the client update path'
+);
+
 set local role postgres;
 
 -- ---------------------------------------------------------------------------
 -- Materialization and idempotency
 -- ---------------------------------------------------------------------------
 
+-- Invoked with defaults, exactly as the scheduled cycle does.
 select ok(
-  reminder_private.materialize_due_reminders(400) > 0,
+  reminder_private.materialize_due_reminders() > 0,
   'materialization creates pending deliveries for active recurring subscriptions'
 );
 
 select is(
-  reminder_private.materialize_due_reminders(400),
+  reminder_private.materialize_due_reminders(),
   0,
   'a second materialization run creates nothing, because the key is derived'
 );
@@ -137,6 +170,31 @@ select is(
   0,
   'materialization only ever produces pending deliveries'
 );
+
+-- Regression: a lead longer than a short occurrence horizon used to be lost
+-- permanently — the occurrence was never expanded, and once it entered the
+-- horizon the send moment was already past, where backfill is refused. The
+-- default horizon must therefore cover every legal lead (up to 365 days).
+select ok(
+  exists (
+    select 1 from public.reminder_deliveries d
+    where d.subscription_id = 'sub_longlead'
+      and d.idempotency_key like '%|60|native'
+      and d.scheduled_for > statement_timestamp()
+  ),
+  'a 60-day lead on a renewal 90 days out is scheduled under the default horizon'
+);
+
+-- The engine must be runnable without BYPASSRLS: security definer routes
+-- execution through the function owner, which the engine policies admit.
+set local role service_role;
+
+select ok(
+  reminder_private.materialize_due_reminders() >= 0,
+  'service_role can invoke materialization through the definer path'
+);
+
+set local role postgres;
 
 -- ---------------------------------------------------------------------------
 -- Daylight-saving correctness
