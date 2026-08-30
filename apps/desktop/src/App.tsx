@@ -189,6 +189,15 @@ function AccountExperience({
       ? initialSnapshot.preferences.timezone
       : "UTC",
   );
+  // The subscription workspace derives spend totals and editor defaults from
+  // the home currency, so it must see the last saved value, not the form
+  // draft: a draft mid-edit transiently holds partial codes like "US", which
+  // would blank the spend summary on every keystroke.
+  const savedHomeCurrency = useRef(
+    initialSnapshot.status === "ready"
+      ? initialSnapshot.preferences.homeCurrency
+      : "USD",
+  );
 
   useEffect(() => {
     const unsubscribe = preferencesRuntime.subscribe((next) => {
@@ -196,6 +205,7 @@ function AccountExperience({
       if (next.status === "onboarding") setDraft(next.defaults);
       if (next.status === "ready") {
         savedTimezone.current = next.preferences.timezone;
+        savedHomeCurrency.current = next.preferences.homeCurrency;
         setDraft(editablePreferences(next.preferences));
       }
     });
@@ -267,7 +277,7 @@ function AccountExperience({
       {subscriptionsRuntime && !onboarding ? (
         <SubscriptionExperience
           runtime={subscriptionsRuntime}
-          homeCurrency={draft.homeCurrency}
+          homeCurrency={savedHomeCurrency.current}
           timezone={savedTimezone.current}
           locale={draft.locale}
         />
