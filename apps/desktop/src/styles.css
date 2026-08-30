@@ -1919,3 +1919,117 @@ kbd {
   }
 }
 /* End Ticket 06 */
+
+.spend-summary {
+  margin-top: 1.25rem;
+  padding: 1rem 1.15rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.spend-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.75rem;
+  margin: 0;
+}
+
+.spend-figures div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.spend-figures dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 550;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.spend-figures dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.spend-summary .field-help {
+  margin: 0.75rem 0 0;
+}
+
+.spend-unconverted {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border-left: 0.25rem solid var(--amber);
+  background: #fff5df;
+}
+
+.spend-unconverted strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.spend-unconverted ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.spend-unconverted li {
+  font-size: 0.86rem;
+  color: #53617a;
+}
+
+.spend-unconverted li span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 550;
+}
+
+.due-reminders {
+  margin-top: 1.25rem;
+  padding: 1rem 1.15rem 1.1rem;
+  border-left: 0.25rem solid var(--cobalt);
+  border-radius: 0.5rem;
+  background: var(--cobalt-pale);
+}
+
+.due-reminders ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.due-reminders li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.due-reminder-copy {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.due-reminder-copy span {
+  color: #53617a;
+  font-size: 0.88rem;
+}
+
+.due-reminder-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.due-reminder-dismiss {
+  background: transparent;
+  color: var(--ink);
+}

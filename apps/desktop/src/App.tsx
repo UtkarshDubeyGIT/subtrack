@@ -16,15 +16,18 @@ import type {
 } from "./account/preferences-runtime";
 import { SubscriptionExperience } from "./subscriptions/SubscriptionExperience";
 import type { SubscriptionsRuntime } from "./subscriptions/subscriptions-runtime";
+import type { RemindersRuntime } from "./reminders/reminders-runtime";
 
 export function AuthApp({
   runtime,
   preferencesRuntime,
   subscriptionsRuntime,
+  remindersRuntime,
 }: Readonly<{
   runtime: DesktopAuthRuntime;
   preferencesRuntime?: PreferencesRuntime;
   subscriptionsRuntime?: SubscriptionsRuntime;
+  remindersRuntime?: RemindersRuntime;
 }>) {
   const [snapshot, setSnapshot] = useState<DesktopAuthSnapshot>(
     runtime.snapshot(),
@@ -40,8 +43,14 @@ export function AuthApp({
     if (snapshot.status !== "signed_in") {
       preferencesRuntime?.reset();
       subscriptionsRuntime?.reset();
+      remindersRuntime?.reset();
     }
-  }, [preferencesRuntime, snapshot.status, subscriptionsRuntime]);
+  }, [
+    preferencesRuntime,
+    remindersRuntime,
+    snapshot.status,
+    subscriptionsRuntime,
+  ]);
 
   return (
     <main>
@@ -56,6 +65,7 @@ export function AuthApp({
         runtime={runtime}
         preferencesRuntime={preferencesRuntime}
         subscriptionsRuntime={subscriptionsRuntime}
+        remindersRuntime={remindersRuntime}
       />
     </main>
   );
@@ -66,11 +76,13 @@ function AuthStatus({
   runtime,
   preferencesRuntime,
   subscriptionsRuntime,
+  remindersRuntime,
 }: Readonly<{
   snapshot: DesktopAuthSnapshot;
   runtime: DesktopAuthRuntime;
   preferencesRuntime?: PreferencesRuntime;
   subscriptionsRuntime?: SubscriptionsRuntime;
+  remindersRuntime?: RemindersRuntime;
 }>) {
   switch (snapshot.status) {
     case "setup_required":
@@ -145,6 +157,7 @@ function AuthStatus({
       if (preferencesRuntime) {
         const accountSnapshot = preferencesRuntime.activate(snapshot.subject);
         subscriptionsRuntime?.activate(snapshot.subject);
+        remindersRuntime?.activate(snapshot.subject);
         return (
           <AccountExperience
             key={snapshot.subject}
@@ -152,6 +165,7 @@ function AuthStatus({
             preferencesRuntime={preferencesRuntime}
             initialSnapshot={accountSnapshot}
             subscriptionsRuntime={subscriptionsRuntime}
+            remindersRuntime={remindersRuntime}
           />
         );
       }
@@ -173,11 +187,13 @@ function AccountExperience({
   preferencesRuntime,
   initialSnapshot,
   subscriptionsRuntime,
+  remindersRuntime,
 }: Readonly<{
   authRuntime: DesktopAuthRuntime;
   preferencesRuntime: PreferencesRuntime;
   initialSnapshot: PreferencesSnapshot;
   subscriptionsRuntime?: SubscriptionsRuntime;
+  remindersRuntime?: RemindersRuntime;
 }>) {
   const [snapshot, setSnapshot] =
     useState<PreferencesSnapshot>(initialSnapshot);
@@ -189,6 +205,15 @@ function AccountExperience({
       ? initialSnapshot.preferences.timezone
       : "UTC",
   );
+  // The subscription workspace derives spend totals and editor defaults from
+  // the home currency, so it must see the last saved value, not the form
+  // draft: a draft mid-edit transiently holds partial codes like "US", which
+  // would blank the spend summary on every keystroke.
+  const savedHomeCurrency = useRef(
+    initialSnapshot.status === "ready"
+      ? initialSnapshot.preferences.homeCurrency
+      : "USD",
+  );
 
   useEffect(() => {
     const unsubscribe = preferencesRuntime.subscribe((next) => {
@@ -196,6 +221,7 @@ function AccountExperience({
       if (next.status === "onboarding") setDraft(next.defaults);
       if (next.status === "ready") {
         savedTimezone.current = next.preferences.timezone;
+        savedHomeCurrency.current = next.preferences.homeCurrency;
         setDraft(editablePreferences(next.preferences));
       }
     });
@@ -267,9 +293,10 @@ function AccountExperience({
       {subscriptionsRuntime && !onboarding ? (
         <SubscriptionExperience
           runtime={subscriptionsRuntime}
-          homeCurrency={draft.homeCurrency}
+          homeCurrency={savedHomeCurrency.current}
           timezone={savedTimezone.current}
           locale={draft.locale}
+          remindersRuntime={remindersRuntime}
         />
       ) : null}
 
@@ -422,13 +449,13 @@ function NotificationCoverage({
 }>) {
   const copy = {
     granted:
-      "This webview currently allows notification prompts. Native reminder delivery is not enabled yet.",
+      "This webview currently allows notification prompts. Due reminders notify here and also appear in the ledger.",
     denied:
-      "This webview blocks notification prompts. Your preference is saved; delivery begins when reminders ship.",
+      "This webview blocks notification prompts. Due reminders still appear in the ledger.",
     prompt:
-      "This webview has not decided notification permission. Reminder delivery is not enabled yet.",
+      "This webview has not decided notification permission. Due reminders appear in the ledger either way.",
     unsupported:
-      "This webview cannot report notification permission. Reminder delivery is not enabled yet.",
+      "This webview cannot report notification permission. Due reminders appear in the ledger.",
   }[status];
   return (
     <aside

@@ -152,6 +152,12 @@ select results_eq(
     order by p.oid::regprocedure::text
   $$,
   $$values
+    -- Reviewed addition (reminder engine): the acknowledgement RPC is the
+    -- single client write path for reminder deliveries. Ownership comes from
+    -- the verified token inside the function, direct table writes remain
+    -- denied to authenticated, and its own suite pins the legal transitions
+    -- and cross-account rejection (supabase/tests/reminder_engine.sql).
+    ('acknowledge_reminder_delivery(text,text,text)'::text),
     ('private.contains_prohibited_subscription_secret(text)'::text),
     ('private.contains_uri_userinfo(text)'::text),
     ('private.current_clerk_subject()'::text)

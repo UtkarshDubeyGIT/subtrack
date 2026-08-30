@@ -9,9 +9,11 @@ import {
 } from "react";
 import {
   createRecurringSubscription,
+  type FxRateInput,
   type LifecycleAction,
 } from "@subtrack/domain";
 import type { PersistedSubscription } from "@subtrack/data";
+import { buildSpendView, type SpendView } from "./spend-view";
 import {
   applyCuratedServiceDefaults,
   createSubscriptionDraft,
@@ -33,6 +35,8 @@ import {
   createBillingDateProposalRange,
   isBillingDateProposalValid,
 } from "./calendar-agenda-model";
+import { RemindersExperience } from "../reminders/RemindersExperience";
+import type { RemindersRuntime } from "../reminders/reminders-runtime";
 
 type EditorState = Readonly<{
   mode: "create" | "edit";
@@ -58,6 +62,8 @@ export function SubscriptionExperience({
   locale,
   today,
   createId = defaultSubscriptionId,
+  fxRates = [],
+  remindersRuntime,
 }: Readonly<{
   runtime: SubscriptionsRuntime;
   homeCurrency: string;
@@ -65,6 +71,15 @@ export function SubscriptionExperience({
   locale: string;
   today?: () => string;
   createId?: () => string;
+  /**
+   * Rates used to normalize spend into the home currency. Empty until FX
+   * ingestion ships, which is correct rather than degraded: single-currency
+   * portfolios need no rates, and foreign amounts are reported as
+   * unconverted instead of being silently omitted from the totals.
+   */
+  fxRates?: readonly FxRateInput[];
+  /** Due-reminder delivery surface; absent in builds without data sync. */
+  remindersRuntime?: RemindersRuntime;
 }>) {
   const [snapshot, setSnapshot] = useState<SubscriptionsSnapshot>(
     runtime.snapshot(),
@@ -202,6 +217,12 @@ export function SubscriptionExperience({
     ({ record }) => record.subscription.id === snapshot.selectedId,
   );
   const mutationPending = snapshot.mutation?.status === "pending";
+  const spendView = buildSpendView({
+    records: currentItems.map(({ record }) => record),
+    rates: fxRates,
+    homeCurrency,
+    locale: displayLocale,
+  });
   const selectFromCalendar = (id: string) => {
     pendingAgendaDetailFocus.current = id;
     if (snapshot.selectedId === id) {
@@ -372,6 +393,20 @@ export function SubscriptionExperience({
           {snapshot.announcement}
         </output>
       ) : null}
+
+      {remindersRuntime ? (
+        <RemindersExperience
+          runtime={remindersRuntime}
+          locale={displayLocale}
+          nameOf={(subscriptionId) =>
+            snapshot.items.find(
+              ({ record }) => record.subscription.id === subscriptionId,
+            )?.record.subscription.serviceName
+          }
+        />
+      ) : null}
+
+      <SpendSummary view={spendView} />
 
       <CalendarAgendaExperience
         items={snapshot.items}
@@ -1335,6 +1370,49 @@ function DeleteDialog({
         </footer>
       </section>
     </div>
+  );
+}
+
+function SpendSummary({ view }: Readonly<{ view: SpendView | null }>) {
+  if (!view) return null;
+  const missing = view.unconverted.length;
+  const missingLabel =
+    missing === 1 ? "1 subscription" : `${missing} subscriptions`;
+  return (
+    <section className="spend-summary" aria-labelledby="spend-summary-heading">
+      <div className="section-heading-row">
+        <h3 id="spend-summary-heading">Committed spend</h3>
+        <span>{view.countedCount}</span>
+      </div>
+      <dl className="spend-figures">
+        <div>
+          <dt>Monthly</dt>
+          <dd>{view.monthlyText}</dd>
+        </div>
+        <div>
+          <dt>Annual</dt>
+          <dd>{view.annualText}</dd>
+        </div>
+      </dl>
+      <p className="field-help">
+        Normalized to {view.homeCurrency} across every active and trial
+        subscription. Paused, canceled, and one-time items are excluded.
+      </p>
+      {missing > 0 ? (
+        <div className="spend-unconverted" role="status" aria-live="polite">
+          <strong>
+            Not included — no exchange rate available for {missingLabel}
+          </strong>
+          <ul>
+            {view.unconverted.map((entry) => (
+              <li key={entry.subscriptionId}>
+                {entry.serviceName} <span>{entry.amountText}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

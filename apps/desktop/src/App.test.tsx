@@ -155,7 +155,7 @@ describe("AuthApp", () => {
     expect(html).toContain("Reminder lead times");
     expect(html).toContain("Email fallback");
     expect(html).toContain("webview blocks notification prompts");
-    expect(html).toContain("delivery begins when reminders ship");
+    expect(html).toContain("Due reminders still appear in the ledger");
     expect(html).toContain("Save and continue");
     expect(html).not.toContain("user_secret_123");
   });
@@ -187,7 +187,9 @@ describe("AuthApp", () => {
     expect(html).toContain('value="BRL"');
     expect(html).toContain("Preferences saved.");
     expect(html).toContain("webview currently allows notification prompts");
-    expect(html).toContain("Native reminder delivery is not enabled yet");
+    expect(html).toContain(
+      "Due reminders notify here and also appear in the ledger",
+    );
     expect(html).toContain("Passkey and MFA controls stay unavailable");
     expect(html).toContain("not available in this build");
     expect(html).toContain("server-validated recent verification");
