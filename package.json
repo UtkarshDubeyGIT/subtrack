@@ -1,0 +1,52 @@
+{
+  "name": "subtrack",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@10.9.8",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run security:config",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "security:config": "vitest run tests/security-config.test.ts",
+    "security:deps:js": "npm audit --audit-level=high",
+    "security:deps:rust": "cargo audit --file apps/desktop/src-tauri/Cargo.lock",
+    "security:secrets": "gitleaks git --redact --no-banner",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "test": "vitest run",
+    "test:db": "supabase test db",
+    "test:pgtap:full": "sh tests/run-full-pgtap.sh",
+    "test:migration-chain": "sh tests/run-renewal-migration-chain.sh",
+    "test:subscription-migration": "sh tests/run-subscription-management-migration.sh",
+    "test:calendar-server-bounded": "sh tests/run-calendar-server-bounded-test.sh",
+    "test:authoritative-cursor": "sh tests/run-authoritative-cursor-test.sh",
+    "test:calendar-20k-plan": "sh tests/run-calendar-20k-plan.sh",
+    "test:calendar-serialization": "sh tests/run-calendar-serialization-test.sh",
+    "test:calendar-cursor-retention": "sh tests/run-calendar-cursor-retention-test.sh",
+    "admin:clerk-authority:subtrack-dev": "supabase db query --linked --file supabase/admin/subtrack-dev/set-clerk-identity-authority.sql",
+    "prove:hosted-clerk:subtrack-dev": "node scripts/hosted-clerk-proof/cli.mjs",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.32.0",
+    "@types/node": "24.1.0",
+    "eslint": "9.32.0",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-react-refresh": "0.4.20",
+    "globals": "16.3.0",
+    "prettier": "3.6.2",
+    "smol-toml": "1.7.1",
+    "supabase": "2.111.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.38.0",
+    "vitest": "3.2.7"
+  }
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Subtrack calendar ledger</title>
+  <desc id="description">A calm paper calendar with a cobalt selected date and ledger lines.</desc>
+  <rect width="512" height="512" rx="112" fill="#15233f"/>
+  <rect x="88" y="92" width="336" height="332" rx="44" fill="#fffdf7"/>
+  <path d="M88 176h336" stroke="#315bf5" stroke-width="24"/>
+  <path d="M168 72v64M344 72v64" stroke="#fffdf7" stroke-width="28" stroke-linecap="round"/>
+  <rect x="136" y="224" width="88" height="88" rx="18" fill="#315bf5"/>
+  <path d="M264 238h112M264 274h80M136 356h240" stroke="#15233f" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="376" cy="356" r="16" fill="#e36f5b"/>
+</svg>

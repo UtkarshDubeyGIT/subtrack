@@ -1,0 +1,33 @@
+{
+  "name": "@subtrack/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "dev": "vite",
+    "tauri": "tauri",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@subtrack/data": "*",
+    "@subtrack/domain": "*",
+    "@subtrack/schemas": "*",
+    "@tauri-apps/api": "2.11.1",
+    "@tauri-apps/plugin-deep-link": "2.4.9",
+    "@tauri-apps/plugin-opener": "2.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.0.14"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.3",
+    "@tauri-apps/cli": "2.11.4",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "30.0.1",
+    "vite": "7.3.6"
+  }
+}

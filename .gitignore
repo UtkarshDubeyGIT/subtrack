@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+target/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+.env*
+!.env.example
+
+apps/desktop/src-tauri/gen/
+supabase/.temp/
+.proof/

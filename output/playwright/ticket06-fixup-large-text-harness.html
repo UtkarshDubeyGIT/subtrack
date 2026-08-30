@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket 06 large-text browser regression</title>
+    <link rel="stylesheet" href="/apps/desktop/src/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section class="subscription-workspace" aria-labelledby="fixture-title">
+        <header class="ledger-header">
+          <div>
+            <p class="eyebrow">200% TEXT REGRESSION</p>
+            <h1 id="fixture-title">Subscription names remain complete</h1>
+            <p>
+              Representative long names must wrap without ellipsis or horizontal
+              clipping.
+            </p>
+          </div>
+        </header>
+        <div class="ledger-layout">
+          <div class="ledger-column">
+            <section
+              class="ledger-section"
+              aria-labelledby="fixture-ledger-title"
+            >
+              <div class="section-heading-row">
+                <h2 id="fixture-ledger-title">Current ledger</h2>
+                <span>3</span>
+              </div>
+              <div class="subscription-list">
+                <button class="subscription-row" type="button">
+                  <span class="date-tab" aria-hidden="true"
+                    ><strong>31</strong><small>AUG</small></span
+                  >
+                  <span class="subscription-row-copy"
+                    ><strong>Alpha streaming annual family plan</strong
+                    ><small>Standard</small></span
+                  >
+                  <span class="subscription-row-meta"
+                    ><strong>$12.99</strong
+                    ><small class="status status-active">Active</small></span
+                  >
+                </button>
+                <button class="subscription-row" type="button">
+                  <span class="date-tab" aria-hidden="true"
+                    ><strong>31</strong><small>AUG</small></span
+                  >
+                  <span class="subscription-row-copy"
+                    ><strong>Beta storage professional workspace</strong
+                    ><small>2 TB</small></span
+                  >
+                  <span class="subscription-row-meta"
+                    ><strong>$12.99</strong
+                    ><small class="status status-active">Active</small></span
+                  >
+                </button>
+                <button class="subscription-row" type="button">
+                  <span class="date-tab" aria-hidden="true"
+                    ><strong>15</strong><small>SEP</small></span
+                  >
+                  <span class="subscription-row-copy"
+                    ><strong>Trial design collaboration suite</strong
+                    ><small>Pro trial</small></span
+                  >
+                  <span class="subscription-row-meta"
+                    ><strong>$12.99</strong
+                    ><small class="status status-trial">Trial</small></span
+                  >
+                </button>
+              </div>
+              <div
+                class="ledger-pagination"
+                role="group"
+                aria-label="Ledger pages"
+              >
+                <p role="status">3 subscriptions loaded</p>
+                <button
+                  type="button"
+                  class="secondary-button"
+                  aria-label="Load more subscriptions"
+                  aria-disabled="true"
+                >
+                  All subscriptions loaded
+                </button>
+              </div>
+            </section>
+          </div>
+          <aside class="subscription-detail" aria-label="Regression evidence">
+            <p class="eyebrow">BROWSER ASSERTION</p>
+            <h2>No destructive clipping</h2>
+            <p>
+              Every service name is visible in full at a 200% root font size.
+            </p>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

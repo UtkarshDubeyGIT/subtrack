@@ -1,0 +1,5 @@
+title = "Subtrack secret scanning"
+
+[allowlist]
+description = "Documented development placeholder only"
+paths = ['''^\.env\.example$''']
