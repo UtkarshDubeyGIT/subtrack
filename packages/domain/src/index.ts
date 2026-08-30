@@ -2,4 +2,5 @@ export * from "./lifecycle";
 export * from "./money";
 export * from "./recurrence";
 export * from "./renewal";
+export * from "./spend";
 export * from "./subscription";
