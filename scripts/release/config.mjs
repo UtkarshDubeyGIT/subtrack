@@ -69,7 +69,8 @@ export function createReleaseConfig(environment, base, capability) {
     /connect-src[^;]*/,
     `connect-src 'self' ipc: http://ipc.localhost ${origins.join(" ")}`,
   );
-  const authorizeUrl = `${broker.origin}${broker.pathname.replace(/\/$/, "")}/v1/desktop/authorize?*`;
+  // Opener uses glob::Pattern: [?] matches a literal query delimiter.
+  const authorizeUrl = `${broker.origin}${broker.pathname.replace(/\/$/, "")}/v1/desktop/authorize[?]*`;
   const configuredCapability = structuredClone(capability);
   delete configuredCapability.$schema;
   configuredCapability.identifier = "release-main-window";

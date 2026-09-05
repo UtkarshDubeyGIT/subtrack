@@ -22,7 +22,7 @@ describe("installer configuration", () => {
       identifier: "opener:allow-open-url",
       allow: [
         {
-          url: "https://auth.subtrack.app/functions/v1/auth-broker/v1/desktop/authorize?*",
+          url: "https://auth.subtrack.app/functions/v1/auth-broker/v1/desktop/authorize[?]*",
         },
       ],
     });
@@ -76,7 +76,7 @@ describe("installer configuration", () => {
       VITE_AUTH_BROKER_URL: environment.VITE_AUTH_BROKER_URL + "/",
     });
     expect(JSON.stringify(config)).toContain(
-      "/auth-broker/v1/desktop/authorize?*",
+      "/auth-broker/v1/desktop/authorize[?]*",
     );
     expect(JSON.stringify(config)).not.toContain("/auth-broker//");
   });
