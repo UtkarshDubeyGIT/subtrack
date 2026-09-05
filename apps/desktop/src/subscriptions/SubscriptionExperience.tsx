@@ -35,6 +35,7 @@ import {
   createBillingDateProposalRange,
   isBillingDateProposalValid,
 } from "./calendar-agenda-model";
+import { Icon } from "../Icon";
 import { RemindersExperience } from "../reminders/RemindersExperience";
 import type { RemindersRuntime } from "../reminders/reminders-runtime";
 
@@ -84,6 +85,11 @@ export function SubscriptionExperience({
   const [snapshot, setSnapshot] = useState<SubscriptionsSnapshot>(
     runtime.snapshot(),
   );
+  const [workspaceView, setWorkspaceView] = useState<
+    "subscriptions" | "calendar"
+  >("subscriptions");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"renewal" | "name">("renewal");
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [lifecycleDialog, setLifecycleDialog] =
     useState<LifecycleDialogState | null>(null);
@@ -174,7 +180,7 @@ export function SubscriptionExperience({
     }
     pendingAgendaDetailFocus.current = null;
     subscriptionDetail.current?.focus();
-  }, [snapshot]);
+  }, [snapshot, workspaceView]);
 
   if (snapshot.status === "loading") {
     return (
@@ -201,7 +207,10 @@ export function SubscriptionExperience({
             Reload subscriptions
           </button>
         ) : (
-          <p>Update the data-sync build configuration, then rebuild the app.</p>
+          <p>
+            Install the latest official version. If this continues, report the
+            issue from Help &amp; privacy.
+          </p>
         )}
       </section>
     );
@@ -213,6 +222,39 @@ export function SubscriptionExperience({
   const archivedItems = snapshot.items.filter(
     ({ record }) => record.subscription.lifecycle.status === "expired",
   );
+  const normalizedSearch = search.trim().toLocaleLowerCase(displayLocale);
+  const visibleItems = (items: readonly ManagedSubscription[]) =>
+    items
+      .filter(({ record }) =>
+        [
+          record.subscription.serviceName,
+          record.metadata.planName,
+          record.metadata.category,
+        ].some((value) =>
+          value?.toLocaleLowerCase(displayLocale).includes(normalizedSearch),
+        ),
+      )
+      .sort((left, right) => {
+        if (sortBy === "name")
+          return left.record.subscription.serviceName.localeCompare(
+            right.record.subscription.serviceName,
+            displayLocale,
+          );
+        const date = ({ record }: ManagedSubscription) =>
+          record.subscription.kind === "recurring"
+            ? record.subscription.nextRenewalDate
+            : (record.subscription.accessEndsOn ??
+              record.subscription.purchasedOn);
+        return (
+          date(left).localeCompare(date(right)) ||
+          left.record.subscription.serviceName.localeCompare(
+            right.record.subscription.serviceName,
+            displayLocale,
+          )
+        );
+      });
+  const visibleCurrent = visibleItems(currentItems);
+  const visibleArchived = visibleItems(archivedItems);
   const selected = snapshot.items.find(
     ({ record }) => record.subscription.id === snapshot.selectedId,
   );
@@ -224,6 +266,7 @@ export function SubscriptionExperience({
     locale: displayLocale,
   });
   const selectFromCalendar = (id: string) => {
+    setWorkspaceView("subscriptions");
     pendingAgendaDetailFocus.current = id;
     if (snapshot.selectedId === id) {
       queueMicrotask(() => {
@@ -366,8 +409,11 @@ export function SubscriptionExperience({
     >
       <header className="ledger-header">
         <div>
-          <p className="eyebrow">PRIVATE RENEWAL LEDGER</p>
-          <h2 id="subscriptions-heading">Subscriptions</h2>
+          <h2 id="subscriptions-heading">
+            {workspaceView === "subscriptions"
+              ? "Overview"
+              : "Renewal calendar"}
+          </h2>
           <p>Add your subscriptions and see their next renewal at a glance.</p>
         </div>
         <button
@@ -378,7 +424,7 @@ export function SubscriptionExperience({
           aria-keyshortcuts="Meta+N Control+N"
           onClick={openCreate}
         >
-          <span aria-hidden="true">＋</span>
+          <Icon name="plus" />
           Add subscription
           <kbd>⌘/Ctrl N</kbd>
         </button>
@@ -403,158 +449,263 @@ export function SubscriptionExperience({
         />
       ) : null}
 
-      <SpendSummary view={spendView} />
+      <div hidden={workspaceView !== "subscriptions"}>
+        <SpendSummary
+          view={spendView}
+          totalCount={snapshot.items.length}
+          complete={snapshot.ledger.complete}
+        />
+      </div>
 
-      <CalendarAgendaExperience
-        items={snapshot.items}
-        events={snapshot.calendarEvents}
-        selectedSubscriptionId={snapshot.selectedId}
-        locale={displayLocale}
-        timezone={timezone}
-        today={accountToday()}
-        mutationPending={mutationPending}
-        onSelectSubscription={selectFromCalendar}
-        calendarRangeState={snapshot.calendarRange}
-        onCalendarRangeChange={loadCalendarRange}
-        onRetryCalendarRange={retryCalendarRange}
-        onRescheduleSubscription={(id, date) =>
-          rescheduleSubscription(id, date)
-        }
-      />
-
-      <div className="ledger-layout">
-        <div className="ledger-column">
-          <section
-            className="ledger-section"
-            aria-labelledby="active-ledger-heading"
-          >
-            <div className="section-heading-row">
-              <h3 id="active-ledger-heading">Current ledger</h3>
-              <span>{currentItems.length}</span>
-            </div>
-            {currentItems.length === 0 ? (
-              <div className="empty-ledger">
-                <strong>No subscriptions yet</strong>
-                <p>Add the next charge you want to see coming.</p>
-                <button type="button" onClick={openCreate}>
-                  Add your first subscription
-                </button>
-              </div>
-            ) : (
-              <SubscriptionList
-                items={currentItems}
-                selectedId={snapshot.selectedId}
-                locale={displayLocale}
-                onSelect={(id) => void runtime.select(id)}
-              />
-            )}
-          </section>
-
-          <section
-            className="ledger-section archive-section"
-            aria-label="Archive and history"
-          >
-            <div className="section-heading-row">
-              <h3>Archive &amp; history</h3>
-              <span>{archivedItems.length}</span>
-            </div>
-            {archivedItems.length === 0 ? (
-              <p className="archive-empty">
-                Expired items stay here with their renewal history.
-              </p>
-            ) : (
-              <SubscriptionList
-                items={archivedItems}
-                selectedId={snapshot.selectedId}
-                locale={displayLocale}
-                onSelect={(id) => void runtime.select(id)}
-              />
-            )}
-          </section>
-
-          <div
-            className="ledger-pagination"
-            role="group"
-            aria-label="Ledger pages"
-          >
-            <p role="status" aria-live="polite">
-              {`${snapshot.items.length} ${snapshot.items.length === 1 ? "subscription" : "subscriptions"} loaded`}
-            </p>
-            {snapshot.ledger.status === "error" ? (
-              <p role="alert">{snapshot.ledger.message}</p>
-            ) : null}
-            <button
-              type="button"
-              className="secondary-button"
-              aria-label="Load more subscriptions"
-              aria-disabled={
-                snapshot.ledger.complete ||
-                snapshot.ledger.status === "loading_more"
+      <div
+        className="workspace-tabs"
+        role="tablist"
+        aria-label="Workspace views"
+        onKeyDown={handleWorkspaceTabKey}
+      >
+        <button
+          id="subscriptions-tab"
+          type="button"
+          role="tab"
+          aria-selected={workspaceView === "subscriptions"}
+          aria-controls="subscriptions-panel"
+          tabIndex={workspaceView === "subscriptions" ? 0 : -1}
+          onClick={() => setWorkspaceView("subscriptions")}
+        >
+          <Icon name="grid" /> Subscriptions
+        </button>
+        <button
+          id="calendar-tab"
+          type="button"
+          role="tab"
+          aria-selected={workspaceView === "calendar"}
+          aria-controls="calendar-panel"
+          tabIndex={workspaceView === "calendar" ? 0 : -1}
+          onClick={() => setWorkspaceView("calendar")}
+        >
+          <Icon name="calendar" /> Calendar
+        </button>
+      </div>
+      <div
+        id="calendar-panel"
+        role="tabpanel"
+        aria-labelledby="calendar-tab"
+        hidden={workspaceView !== "calendar"}
+      >
+        <CalendarAgendaExperience
+          items={snapshot.items}
+          events={snapshot.calendarEvents}
+          selectedSubscriptionId={snapshot.selectedId}
+          locale={displayLocale}
+          timezone={timezone}
+          today={accountToday()}
+          mutationPending={mutationPending}
+          onSelectSubscription={selectFromCalendar}
+          calendarRangeState={snapshot.calendarRange}
+          onCalendarRangeChange={loadCalendarRange}
+          onRetryCalendarRange={retryCalendarRange}
+          onRescheduleSubscription={(id, date) =>
+            rescheduleSubscription(id, date)
+          }
+        />
+      </div>
+      <div
+        id="subscriptions-panel"
+        role="tabpanel"
+        aria-labelledby="subscriptions-tab"
+        hidden={workspaceView !== "subscriptions"}
+      >
+        <div className="list-toolbar">
+          <label className="subscription-search">
+            <span className="visually-hidden">Search subscriptions</span>
+            <Icon name="search" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              placeholder="Search subscriptions…"
+            />
+          </label>
+          <label className="sort-control">
+            <span>Sort by</span>
+            <select
+              value={sortBy}
+              onChange={(event) =>
+                setSortBy(event.currentTarget.value as "renewal" | "name")
               }
-              onClick={() => {
-                if (
+              aria-label="Sort subscriptions"
+            >
+              <option value="renewal">Renewal date</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
+        </div>
+        {normalizedSearch ? (
+          <p className="search-results-count" role="status">
+            {visibleCurrent.length + visibleArchived.length} matching{" "}
+            {visibleCurrent.length + visibleArchived.length === 1
+              ? "subscription"
+              : "subscriptions"}
+            {snapshot.ledger.complete ? "" : " in loaded records"}
+          </p>
+        ) : null}
+        <div className="ledger-layout">
+          <div className="ledger-column">
+            <section
+              className="ledger-section"
+              aria-labelledby="active-ledger-heading"
+            >
+              <div className="section-heading-row">
+                <h3 id="active-ledger-heading">Current ledger</h3>
+                <span>{visibleCurrent.length}</span>
+              </div>
+              {currentItems.length > 0 && visibleCurrent.length === 0 ? (
+                <div className="empty-ledger">
+                  <Icon name="search" />
+                  <strong>No matching subscriptions</strong>
+                  <p>Try another service, plan, or category.</p>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setSearch("")}
+                  >
+                    Clear search
+                  </button>
+                </div>
+              ) : currentItems.length === 0 ? (
+                <div className="empty-ledger">
+                  <span className="empty-icon">
+                    <Icon name="layers" />
+                  </span>
+                  <strong>Your first subscription starts here</strong>
+                  <p>
+                    Add a service you use. We’ll help you keep its next renewal
+                    in view.
+                  </p>
+                  <button type="button" onClick={openCreate}>
+                    Add your first subscription
+                  </button>
+                </div>
+              ) : (
+                <SubscriptionList
+                  items={visibleCurrent}
+                  selectedId={snapshot.selectedId}
+                  locale={displayLocale}
+                  onSelect={(id) => void runtime.select(id)}
+                />
+              )}
+            </section>
+
+            <section
+              className="ledger-section archive-section"
+              aria-label="Archive and history"
+            >
+              <div className="section-heading-row">
+                <h3>Archive &amp; history</h3>
+                <span>{visibleArchived.length}</span>
+              </div>
+              {visibleArchived.length === 0 ? (
+                <p className="archive-empty">
+                  {normalizedSearch && archivedItems.length > 0
+                    ? "No archived subscriptions match your search."
+                    : "Expired items stay here with their renewal history."}
+                </p>
+              ) : (
+                <SubscriptionList
+                  items={visibleArchived}
+                  selectedId={snapshot.selectedId}
+                  locale={displayLocale}
+                  onSelect={(id) => void runtime.select(id)}
+                />
+              )}
+            </section>
+
+            <div
+              className="ledger-pagination"
+              role="group"
+              aria-label="Ledger pages"
+            >
+              <p role="status" aria-live="polite">
+                {`${snapshot.items.length} ${snapshot.items.length === 1 ? "subscription" : "subscriptions"} loaded`}
+              </p>
+              {snapshot.ledger.status === "error" ? (
+                <p role="alert">{snapshot.ledger.message}</p>
+              ) : null}
+              <button
+                type="button"
+                className="secondary-button"
+                aria-label="Load more subscriptions"
+                aria-disabled={
                   snapshot.ledger.complete ||
                   snapshot.ledger.status === "loading_more"
-                ) {
-                  return;
                 }
-                void runtime.loadMoreSubscriptions();
-              }}
-            >
-              {snapshot.ledger.status === "loading_more"
-                ? "Loading more…"
-                : snapshot.ledger.complete
-                  ? "All subscriptions loaded"
-                  : snapshot.ledger.status === "error"
-                    ? "Retry loading more"
-                    : "Load more"}
-            </button>
-          </div>
-        </div>
-
-        <aside
-          ref={subscriptionDetail}
-          id="subscription-detail"
-          className="subscription-detail"
-          tabIndex={-1}
-          aria-label={
-            selected
-              ? `Billing details for ${selected.record.subscription.serviceName}`
-              : "Subscription details"
-          }
-        >
-          <output
-            className="visually-hidden"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            aria-label="Subscription detail result"
-          >
-            {selected
-              ? `Showing billing details for ${selected.record.subscription.serviceName}.`
-              : "No subscription details selected."}
-          </output>
-          {selected ? (
-            <SubscriptionDetail
-              item={selected}
-              history={snapshot.history}
-              locale={displayLocale}
-              onEdit={() => openEdit(selected.record)}
-              onLifecycle={(action) => openLifecycle(selected.record, action)}
-              onDelete={() => {
-                dialogReturnFocus.current =
-                  document.activeElement as HTMLElement | null;
-                setDeleteRecord(selected.record);
-              }}
-              onLoadMoreHistory={() => void runtime.loadMoreHistory()}
-            />
-          ) : (
-            <div className="detail-placeholder">
-              <span aria-hidden="true">↗</span>
-              <p>Select a subscription to see its details and history.</p>
+                onClick={() => {
+                  if (
+                    snapshot.ledger.complete ||
+                    snapshot.ledger.status === "loading_more"
+                  ) {
+                    return;
+                  }
+                  void runtime.loadMoreSubscriptions();
+                }}
+              >
+                {snapshot.ledger.status === "loading_more"
+                  ? "Loading more…"
+                  : snapshot.ledger.complete
+                    ? "All subscriptions loaded"
+                    : snapshot.ledger.status === "error"
+                      ? "Retry loading more"
+                      : "Load more"}
+              </button>
             </div>
-          )}
-        </aside>
+          </div>
+
+          <aside
+            ref={subscriptionDetail}
+            id="subscription-detail"
+            className="subscription-detail"
+            tabIndex={-1}
+            aria-label={
+              selected
+                ? `Billing details for ${selected.record.subscription.serviceName}`
+                : "Subscription details"
+            }
+          >
+            <output
+              className="visually-hidden"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label="Subscription detail result"
+            >
+              {selected
+                ? `Showing billing details for ${selected.record.subscription.serviceName}.`
+                : "No subscription details selected."}
+            </output>
+            {selected ? (
+              <SubscriptionDetail
+                item={selected}
+                history={snapshot.history}
+                locale={displayLocale}
+                onEdit={() => openEdit(selected.record)}
+                onLifecycle={(action) => openLifecycle(selected.record, action)}
+                onDelete={() => {
+                  dialogReturnFocus.current =
+                    document.activeElement as HTMLElement | null;
+                  setDeleteRecord(selected.record);
+                }}
+                onLoadMoreHistory={() => void runtime.loadMoreHistory()}
+              />
+            ) : (
+              <div className="detail-placeholder">
+                <span className="empty-icon">
+                  <Icon name="layers" />
+                </span>
+                <p>Select a subscription to see its details and history.</p>
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
 
       {editor ? (
@@ -644,7 +795,7 @@ function SubscriptionList({
               <small>
                 {record.metadata.planName ??
                   record.metadata.category ??
-                  "No plan label"}
+                  recurrenceLabel(record)}
               </small>
             </span>
             <span className="subscription-row-meta">
@@ -687,11 +838,11 @@ function SubscriptionDetail({
   const historyComplete = "complete" in history ? history.complete : false;
   return (
     <div>
-      <p className="eyebrow">BILLING TRUTH</p>
+      <p className="eyebrow">Subscription details</p>
       <div className="detail-title-row">
         <div>
           <h3>{subscription.serviceName}</h3>
-          <p>{metadata.planName ?? "No plan label"}</p>
+          <p>{metadata.planName ?? recurrenceLabel(record)}</p>
         </div>
         <span className={`status status-${subscription.lifecycle.status}`}>
           {lifecycleLabel(subscription.lifecycle.status)}
@@ -848,7 +999,9 @@ function SubscriptionEditor({
         <header className="dialog-header">
           <div>
             <p className="eyebrow">
-              {state.mode === "create" ? "QUICK CAPTURE" : "EDIT BILLING TRUTH"}
+              {state.mode === "create"
+                ? "New subscription"
+                : "Subscription details"}
             </p>
             <h2 id="subscription-editor-title">{title}</h2>
           </div>
@@ -1369,35 +1522,63 @@ function DeleteDialog({
   );
 }
 
-function SpendSummary({ view }: Readonly<{ view: SpendView | null }>) {
-  if (!view) return null;
-  const missing = view.unconverted.length;
-  const missingLabel =
-    missing === 1 ? "1 subscription" : `${missing} subscriptions`;
+function SpendSummary({
+  view,
+  totalCount,
+  complete,
+}: Readonly<{
+  view: SpendView | null;
+  totalCount: number;
+  complete: boolean;
+}>) {
+  const missing = view?.unconverted.length ?? 0;
   return (
     <section className="spend-summary" aria-labelledby="spend-summary-heading">
-      <div className="section-heading-row">
-        <h3 id="spend-summary-heading">Committed spend</h3>
-        <span>{view.countedCount}</span>
-      </div>
+      <h3 id="spend-summary-heading" className="visually-hidden">
+        Committed spend
+      </h3>
       <dl className="spend-figures">
         <div>
-          <dt>Monthly</dt>
-          <dd>{view.monthlyText}</dd>
+          <dt>
+            Monthly equivalent <Icon name="calendar" />
+          </dt>
+          <dd>{view?.monthlyText ?? "—"}</dd>
+          <dd className="metric-caption">
+            Recurring spend{view ? ` · ${view.homeCurrency}` : ""}
+          </dd>
         </div>
         <div>
-          <dt>Annual</dt>
-          <dd>{view.annualText}</dd>
+          <dt>
+            Annual equivalent <Icon name="layers" />
+          </dt>
+          <dd>{view?.annualText ?? "—"}</dd>
+          <dd className="metric-caption">A longer view of your commitments</dd>
+        </div>
+        <div>
+          <dt>
+            Subscriptions <Icon name="grid" />
+          </dt>
+          <dd>
+            {totalCount}
+            <small>{totalCount === 1 ? "service" : "services"}</small>
+          </dd>
+          <dd className="metric-caption">
+            {complete
+              ? "All your records, in one place"
+              : "Loaded so far · more records available"}
+          </dd>
         </div>
       </dl>
-      <p className="field-help">
-        Normalized to {view.homeCurrency} across every active and trial
-        subscription. Paused, canceled, and one-time items are excluded.
+      <p className="spend-note">
+        {view
+          ? `Based on ${complete ? "your" : "loaded"} active and trial subscriptions. Paused, canceled, and one-time items are excluded from spend totals.`
+          : "Add a recurring subscription to see your spending summary."}
       </p>
-      {missing > 0 ? (
+      {missing > 0 && view ? (
         <div className="spend-unconverted" role="status" aria-live="polite">
           <strong>
-            Not included — no exchange rate available for {missingLabel}
+            Not included — no exchange rate available for{" "}
+            {missing === 1 ? "1 subscription" : `${missing} subscriptions`}
           </strong>
           <ul>
             {view.unconverted.map((entry) => (
@@ -1410,6 +1591,25 @@ function SpendSummary({ view }: Readonly<{ view: SpendView | null }>) {
       ) : null}
     </section>
   );
+}
+
+function handleWorkspaceTabKey(event: ReactKeyboardEvent<HTMLDivElement>) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = Array.from(
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+  );
+  const current = tabs.indexOf(document.activeElement as HTMLButtonElement);
+  if (current === -1) return;
+  event.preventDefault();
+  const index =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? tabs.length - 1
+        : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
+          tabs.length;
+  tabs[index]?.focus();
+  tabs[index]?.click();
 }
 
 function MutationBanner({

@@ -225,6 +225,123 @@ async function openQuickAdd() {
 }
 
 describe("SubscriptionExperience", () => {
+  it("switches workspace views with arrow keys without losing the selected calendar date", async () => {
+    setup();
+    const user = userEvent.setup();
+    const subscriptions = await screen.findByRole("tab", {
+      name: "Subscriptions",
+    });
+    const calendar = screen.getByRole("tab", { name: "Calendar" });
+    expect(subscriptions.getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByRole("grid")).toBeNull();
+
+    subscriptions.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(calendar);
+    expect(calendar.getAttribute("aria-selected")).toBe("true");
+    const date = await screen.findByRole("gridcell", {
+      name: /Monday, August 31, 2026/u,
+    });
+    await user.click(date);
+    await user.click(subscriptions);
+    expect(screen.queryByRole("grid")).toBeNull();
+    await user.keyboard("{End}");
+    expect(date.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(calendar);
+    await user.keyboard("{Home}");
+    expect(document.activeElement).toBe(subscriptions);
+    expect(screen.queryByRole("grid")).toBeNull();
+  });
+
+  it("searches service, plan, and category without changing the spending summary", async () => {
+    const beta = persisted();
+    setup([
+      persisted(),
+      {
+        ...beta,
+        subscription: {
+          ...beta.subscription,
+          id: "sub_beta",
+          serviceName: "Beta storage",
+        },
+        metadata: {
+          ...beta.metadata,
+          planName: "Family",
+          category: "Productivity",
+        },
+      },
+    ]);
+    const user = userEvent.setup();
+    const search = await screen.findByRole("searchbox", {
+      name: "Search subscriptions",
+    });
+    const ledger = screen.getByRole("region", { name: "Current ledger" });
+    const spend = screen.getByRole("region", { name: "Committed spend" });
+    const originalSpend = spend.textContent;
+    for (const query of ["  BETA  ", "family", "productivity"]) {
+      await user.clear(search);
+      await user.type(search, query);
+      expect(
+        within(ledger).getByRole("button", { name: /Beta storage/u }),
+      ).toBeTruthy();
+      expect(
+        within(ledger).queryByRole("button", { name: /Alpha streaming/u }),
+      ).toBeNull();
+      expect(spend.textContent).toBe(originalSpend);
+    }
+    await user.clear(search);
+    await user.type(search, "No match");
+    expect(within(ledger).getByText("No matching subscriptions")).toBeTruthy();
+    await user.click(
+      within(ledger).getByRole("button", { name: "Clear search" }),
+    );
+    expect(
+      within(ledger).getByRole("button", { name: /Alpha streaming/u }),
+    ).toBeTruthy();
+    expect(
+      within(ledger).getByRole("button", { name: /Beta storage/u }),
+    ).toBeTruthy();
+  });
+
+  it("sorts subscriptions by renewal date or service name", async () => {
+    const beta = persisted();
+    if (beta.subscription.kind !== "recurring")
+      throw new Error("Expected recurring fixture");
+    setup([
+      persisted(),
+      {
+        ...beta,
+        subscription: {
+          ...beta.subscription,
+          id: "sub_beta",
+          serviceName: "Beta storage",
+          nextRenewalDate: "2026-08-12",
+        },
+      },
+    ]);
+    const user = userEvent.setup();
+    const ledger = await screen.findByRole("region", {
+      name: "Current ledger",
+    });
+    expect(within(ledger).getAllByRole("button")[0]?.textContent).toContain(
+      "Beta storage",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Sort subscriptions" }),
+      "name",
+    );
+    expect(within(ledger).getAllByRole("button")[0]?.textContent).toContain(
+      "Alpha streaming",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Sort subscriptions" }),
+      "renewal",
+    );
+    expect(within(ledger).getAllByRole("button")[0]?.textContent).toContain(
+      "Beta storage",
+    );
+  });
+
   it("settles one successful calendar read across snapshot rerenders", async () => {
     const held = deferred<CalendarPage>();
     const { calendar } = setup();
@@ -253,6 +370,7 @@ describe("SubscriptionExperience", () => {
       .mockRejectedValueOnce(new DataPlaneError("unavailable"))
       .mockResolvedValueOnce(calendarPage([expectedCalendarEvent()]));
     const user = userEvent.setup();
+    await user.click(await screen.findByRole("tab", { name: "Calendar" }));
 
     expect(await screen.findByText("Calendar range unavailable")).toBeTruthy();
     expect(
@@ -282,6 +400,7 @@ describe("SubscriptionExperience", () => {
       .mockResolvedValueOnce(calendarPage([expectedCalendarEvent()]))
       .mockRejectedValueOnce(new DataPlaneError("unavailable"));
     const user = userEvent.setup();
+    await user.click(await screen.findByRole("tab", { name: "Calendar" }));
     await waitFor(() => {
       expect(
         screen.getByRole("gridcell", {
@@ -305,6 +424,8 @@ describe("SubscriptionExperience", () => {
     calendar.listPage
       .mockReset()
       .mockResolvedValueOnce(calendarPage([expectedCalendarEvent()], true));
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Calendar" }));
 
     expect(
       await screen.findByText(/Showing the earliest 256 matching events/u),
@@ -340,6 +461,7 @@ describe("SubscriptionExperience", () => {
       complete: true,
     });
 
+    fireEvent.click(await screen.findByRole("tab", { name: "Calendar" }));
     await waitFor(() => expect(calendar.listPage).toHaveBeenCalledOnce());
     await act(async () => {
       runtime.activate("user_b");
@@ -996,6 +1118,7 @@ describe("SubscriptionExperience", () => {
       today: () => "2026-08-31",
     });
     const user = userEvent.setup();
+    await user.click(await screen.findByRole("tab", { name: "Calendar" }));
 
     const move = await screen.findByRole("button", {
       name: "Propose new billing date",
@@ -1056,6 +1179,7 @@ describe("SubscriptionExperience", () => {
     );
     setup([persisted(), beta], [], { today: () => "2026-08-31" });
     const user = userEvent.setup();
+    await user.click(await screen.findByRole("tab", { name: "Calendar" }));
 
     const detailAction = await screen.findByRole("button", {
       name: /Show details for Beta storage/u,

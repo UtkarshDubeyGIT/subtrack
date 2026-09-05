@@ -126,6 +126,12 @@ cd apps/desktop && npm run tauri dev
 Running the renderer alone with `npm run dev` inside `apps/desktop` works for UI iteration, but
 authentication and the keychain require the Tauri shell.
 
+### Review the interface without an account
+
+Run `npm run dev --workspace @subtrack/desktop` and open `http://127.0.0.1:1420/preview.html`. The separate preview entry uses the actual app components with sample records and in-memory repositories. You can search, change tabs, add or edit records, open settings, and view the welcome screen. Sign-in is simulated; all changes disappear on reload.
+
+For a standalone preview, run `node scripts/preview-ui.mjs`. Open `dist/subtrack-ui-preview.html` in a browser. This build loads no app environment files and makes no account or data-service requests. `npm run build` and the desktop installer use `index.html` / `main.tsx` and do not include the preview entry.
+
 ## Checks
 
 ```sh

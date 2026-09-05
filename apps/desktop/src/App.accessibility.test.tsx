@@ -136,6 +136,10 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
     const user = userEvent.setup();
     render(<AuthApp runtime={runtime} />);
 
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Know what renews next." }),
+    ).toBeTruthy();
+
     await user.tab();
     const continueButton = screen.getByRole("button", {
       name: "Continue in system browser",
@@ -426,6 +430,7 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
     await user.type(timezone, "America/Los_");
 
     expect(timezone).toHaveProperty("value", "America/Los_");
+    await user.click(screen.getByRole("tab", { name: "Calendar" }));
     expect(
       screen.getByRole("region", { name: "Renewal calendar and agenda" }),
     ).toBeTruthy();

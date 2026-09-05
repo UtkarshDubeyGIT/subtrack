@@ -4,6 +4,7 @@ Know what renews next, without connecting your bank or inbox.
 
 - Add subscriptions and one-time access manually.
 - Browse renewals in the calendar and agenda.
+- Find services by name, plan, or category; sort by renewal date or name.
 - See monthly and annual recurring-spend equivalents.
 - Track trials, paused services, cancellations, and retained history.
 - Use your preferred time zone, currency, and regional format.

@@ -25,7 +25,9 @@ The regional format controls how dates and amounts look, such as `en-IN` for Eng
 
 ## Day to day
 
-Use the calendar and agenda to inspect upcoming renewals. Select a subscription to edit it or review its history. Open **Account settings** below the workspace to change preferences.
+Start in **Subscriptions** for a spending overview and your saved services. Search by service, plan, or category, and sort by renewal date or name. Search filters the loaded list; it does not change spending totals. Select a subscription to edit it or review its history.
+
+Switch to **Calendar** to inspect upcoming renewals and the daily agenda. **Show details** returns you to the selected subscription. Use the left and right arrow keys to switch workspace tabs. Open **Account settings** below the workspace to change preferences.
 
 **⌘ N / Ctrl N** opens the add form. **Escape** closes an editor. Forms and calendar controls support keyboard navigation.
 

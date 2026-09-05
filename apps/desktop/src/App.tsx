@@ -17,6 +17,7 @@ import type {
 import { SubscriptionExperience } from "./subscriptions/SubscriptionExperience";
 import type { SubscriptionsRuntime } from "./subscriptions/subscriptions-runtime";
 import { HelpPanel } from "./HelpPanel";
+import { Icon } from "./Icon";
 import type { RemindersRuntime } from "./reminders/reminders-runtime";
 
 export function AuthApp({
@@ -53,23 +54,73 @@ export function AuthApp({
     subscriptionsRuntime,
   ]);
 
+  const signedIn = snapshot.status === "signed_in";
   return (
-    <main>
-      <p className="eyebrow">SUBTRACK / RENEWAL CALENDAR</p>
-      <h1>Know what renews next.</h1>
-      <p>
-        Private renewal planning with fast manual capture and no bank or inbox
-        access.
-      </p>
-      <AuthStatus
-        snapshot={snapshot}
-        runtime={runtime}
-        preferencesRuntime={preferencesRuntime}
-        subscriptionsRuntime={subscriptionsRuntime}
-        remindersRuntime={remindersRuntime}
-      />
-      <HelpPanel />
-    </main>
+    <div className={signedIn ? "app-frame" : "app-frame welcome-frame"}>
+      <header className="product-topbar">
+        <div className="brand">
+          <span className="brand-mark">
+            <Icon name="layers" />
+          </span>
+          <span>Subtrack</span>
+          <span className="brand-divider" />
+          <span className="workspace-label">Personal workspace</span>
+        </div>
+        <span className="privacy-label">
+          <Icon name="shield" /> No bank or inbox access
+        </span>
+      </header>
+      <main className={signedIn ? "workspace-main" : "welcome-main"}>
+        <div className={signedIn ? "workspace-content" : "welcome-layout"}>
+          {!signedIn ? (
+            <div className="welcome-intro">
+              <span className="intro-label">
+                <span /> A little less to keep track of
+              </span>
+              <h1>
+                Know what <br />
+                renews next.
+              </h1>
+              <p>
+                Your subscriptions, renewal dates, and recurring costs. One
+                quiet place to keep them in order.
+              </p>
+              <div className="welcome-benefits">
+                <span>
+                  <Icon name="calendar" /> See the next charge coming
+                </span>
+                <span>
+                  <Icon name="grid" /> Understand your recurring spend
+                </span>
+                <span>
+                  <Icon name="shield" /> Add only what you choose to share
+                </span>
+              </div>
+            </div>
+          ) : null}
+          <div className={signedIn ? "account-content" : "auth-card"}>
+            <AuthStatus
+              snapshot={snapshot}
+              runtime={runtime}
+              preferencesRuntime={preferencesRuntime}
+              subscriptionsRuntime={subscriptionsRuntime}
+              remindersRuntime={remindersRuntime}
+            />
+            {!signedIn ? (
+              <p className="auth-footnote">
+                Your records sync to your online account. An internet connection
+                is required.
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <HelpPanel />
+        <footer className="product-footer">
+          <span>Subtrack</span>
+          <span>Manually added. Thoughtfully organized.</span>
+        </footer>
+      </main>
+    </div>
   );
 }
 
@@ -261,8 +312,12 @@ function AccountExperience({
             Reload preferences
           </button>
         )}
-        <button type="button" onClick={() => void authRuntime.signOut()}>
-          Sign out
+        <button
+          type="button"
+          className="sign-out-button"
+          onClick={() => void authRuntime.signOut()}
+        >
+          <Icon name="logout" /> Sign out
         </button>
       </section>
     );
@@ -282,21 +337,28 @@ function AccountExperience({
     <div className="account-shell">
       <header className="account-header">
         <div>
-          <p className="eyebrow">PRIVATE ACCOUNT</p>
+          <p className="eyebrow">
+            {onboarding ? "Getting started" : "Your workspace"}
+          </p>
           <RouteHeading
             id="account-heading"
+            level={1}
             focusKey={onboarding ? "onboarding" : "account"}
           >
-            {onboarding ? "Welcome to Subtrack" : "Your renewal planner"}
+            {onboarding ? "Make yourself at home." : "Your renewal planner"}
           </RouteHeading>
           <p>
             {onboarding
               ? "Choose how dates and amounts appear. Then add your first subscription."
-              : "A clear view of your subscriptions and upcoming renewals."}
+              : "A little clarity for everything you subscribe to."}
           </p>
         </div>
-        <button type="button" onClick={() => void authRuntime.signOut()}>
-          Sign out
+        <button
+          type="button"
+          className="sign-out-button"
+          onClick={() => void authRuntime.signOut()}
+        >
+          <Icon name="logout" /> Sign out
         </button>
       </header>
 
@@ -537,15 +599,22 @@ function RouteHeading({
   children,
   focusKey,
   id,
-}: Readonly<{ children: ReactNode; focusKey: string; id: string }>) {
+  level = 2,
+}: Readonly<{
+  children: ReactNode;
+  focusKey: string;
+  id: string;
+  level?: 1 | 2;
+}>) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
   }, [focusKey]);
+  const Heading = level === 1 ? "h1" : "h2";
   return (
-    <h2 id={id} ref={heading} tabIndex={-1}>
+    <Heading id={id} ref={heading} tabIndex={-1}>
       {children}
-    </h2>
+    </Heading>
   );
 }
 

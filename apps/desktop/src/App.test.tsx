@@ -86,7 +86,7 @@ describe("AuthApp", () => {
     );
     expect(html).toContain("Install the latest official version");
     expect(html).not.toContain("Check configuration again");
-    expect(html).toContain("Private renewal planning");
+    expect(html).toContain("renews next.");
     expect(html).not.toContain("risk gate has not passed");
     expect(html).not.toContain("Continue in system browser");
   });
@@ -150,7 +150,7 @@ describe("AuthApp", () => {
       />,
     );
 
-    expect(html).toContain("Welcome to Subtrack");
+    expect(html).toContain("Make yourself at home.");
     expect(html).toContain("Time zone");
     expect(html).toContain("Date and number format");
     expect(html).toContain("Home currency");
@@ -226,7 +226,7 @@ describe("AuthApp", () => {
     );
 
     expect(subscriptions.activate).toHaveBeenCalledWith("user_secret_123");
-    expect(html).toContain("PRIVATE RENEWAL LEDGER");
+    expect(html).toContain("Overview");
     expect(html).toContain("Add subscription");
     expect(html).toContain("Current ledger");
     expect(html).toContain("Archive &amp; history");
