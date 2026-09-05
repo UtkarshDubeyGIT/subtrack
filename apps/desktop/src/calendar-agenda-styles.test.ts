@@ -27,10 +27,10 @@ describe("calendar agenda styles", () => {
 
   it("carries the selected-day renewal spine from calendar into agenda", () => {
     expect(calendarStyles).toMatch(
-      /\.calendar-day\[data-selected="true"\][\s\S]*border-inline-start:\s*0\.3rem solid var\(--cobalt\)/u,
+      /\.calendar-day\[data-selected="true"\][\s\S]*border-inline-start:\s*0\.15rem solid var\(--cobalt\)/u,
     );
     expect(calendarStyles).toMatch(
-      /\.calendar-agenda-panel[\s\S]*border-inline-start:\s*0\.3rem solid var\(--cobalt\)/u,
+      /\.calendar-agenda-panel[\s\S]*border-inline-start:\s*0\.15rem solid var\(--cobalt\)/u,
     );
   });
 
@@ -48,7 +48,7 @@ describe("calendar agenda styles", () => {
     }
     expect(calendarStyles).toContain(".calendar-event-notches small");
     expect(calendarStyles).toMatch(
-      /@media \(max-width: 760px\)[\s\S]*\.calendar-month-frame\s*\{[\s\S]*min-width:\s*42rem/u,
+      /@media \(max-width: 760px\)[\s\S]*\.calendar-month-frame\s*\{[\s\S]*min-width:\s*28rem/u,
     );
     expect(calendarStyles).toMatch(
       /@media \(max-width: 760px\)[\s\S]*\.calendar-range-state\s*\{[\s\S]*grid-template-columns:\s*auto minmax\(0, 1fr\)/u,
@@ -65,20 +65,20 @@ describe("calendar agenda styles", () => {
     );
     expect(calendarStyles).toContain("container-type: inline-size");
     expect(calendarStyles).toMatch(
-      /@container \(max-width: 70rem\)[\s\S]*\.calendar-agenda-layout\s*\{[\s\S]*grid-template-columns:\s*1fr/u,
+      /@container \(max-width: 52rem\)[\s\S]*\.calendar-agenda-layout\s*\{[\s\S]*grid-template-columns:\s*1fr/u,
     );
   });
 
   it("gives calendar text and focus indicators at least AA contrast", () => {
-    expect(contrastRatio("#15233f", "#fffdf7")).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio("#56627a", "#fffdf7")).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio("#56627a", "#f4f1e9")).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio("#315bf5", "#fffdf7")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio("#20242e", "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#626b7a", "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#626b7a", "#f8f9fb")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#4262d8", "#ffffff")).toBeGreaterThanOrEqual(3);
     const outsideMonthRule =
       calendarStyles.match(
         /\.calendar-day\[data-outside-month="true"\]\s*\{(?<rule>[^}]*)\}/u,
       )?.groups?.rule ?? "";
-    expect(outsideMonthRule).toContain("color: #56627a");
+    expect(outsideMonthRule).toContain("color: #626b7a");
     expect(outsideMonthRule).not.toContain("opacity:");
     expect(calendarStyles).toMatch(
       /\.calendar-agenda-experience :focus-visible\s*\{[\s\S]*outline-color:\s*var\(--cobalt\)/u,

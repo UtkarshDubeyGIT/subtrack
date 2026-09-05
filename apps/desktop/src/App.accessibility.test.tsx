@@ -136,6 +136,10 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
     const user = userEvent.setup();
     render(<AuthApp runtime={runtime} />);
 
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Know what renews next." }),
+    ).toBeTruthy();
+
     await user.tab();
     const continueButton = screen.getByRole("button", {
       name: "Continue in system browser",
@@ -196,7 +200,7 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
       );
     });
     expect(screen.getByRole("status").textContent).toContain(
-      "No prior account data remains",
+      "Sign in again to return to your subscriptions",
     );
   });
 
@@ -246,7 +250,7 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
     ).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Time zone" })).toBeTruthy();
     expect(
-      screen.getByRole("checkbox", { name: /email fallback/i }),
+      screen.getByRole("checkbox", { name: /email reminders/i }),
     ).toBeTruthy();
   });
 
@@ -354,7 +358,9 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
       "disabled",
       true,
     );
-    for (const group of screen.getAllByRole("group")) {
+    for (const group of screen
+      .getAllByRole("group")
+      .filter((element) => element.tagName === "FIELDSET")) {
       expect(group).toHaveProperty("disabled", true);
     }
     creating.resolve({
@@ -369,6 +375,11 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
     });
 
     expect(await screen.findByText("Preferences saved.")).toBeTruthy();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("heading", { name: "Your renewal planner" }),
+      ),
+    );
   });
 
   it("keeps the saved timezone active while the preference draft is incomplete", async () => {
@@ -405,22 +416,26 @@ describe("AuthApp keyboard and screen-reader behavior", () => {
       />,
     );
 
+    await user.click(
+      await screen.findByText("Account settings", { selector: "summary" }),
+    );
     const timezone = await screen.findByRole("textbox", {
       name: "Time zone",
     });
     expect(
-      screen.getByText(/correction truth in America\/Los_Angeles/u),
+      screen.getByText(/saved dates in America\/Los_Angeles/u),
     ).toBeTruthy();
 
     await user.clear(timezone);
     await user.type(timezone, "America/Los_");
 
     expect(timezone).toHaveProperty("value", "America/Los_");
+    await user.click(screen.getByRole("tab", { name: "Calendar" }));
     expect(
       screen.getByRole("region", { name: "Renewal calendar and agenda" }),
     ).toBeTruthy();
     expect(
-      screen.getByText(/correction truth in America\/Los_Angeles/u),
+      screen.getByText(/saved dates in America\/Los_Angeles/u),
     ).toBeTruthy();
   });
 

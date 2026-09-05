@@ -12,3 +12,4 @@ target/
 apps/desktop/src-tauri/gen/
 supabase/.temp/
 .proof/
+apps/desktop/src-tauri/tauri.release.conf.json

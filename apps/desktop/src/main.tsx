@@ -3,6 +3,7 @@ import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { createRoot } from "react-dom/client";
 import { AuthApp } from "./App";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { createDesktopPreferencesRuntime } from "./account/preferences-composition";
 import { createDesktopAuthRuntime } from "./auth/desktop-auth";
 import { deliverAuthCallbacks } from "./auth/deep-link-ingress";
@@ -39,10 +40,12 @@ async function configureDeepLinkIngress() {
 const root = document.getElementById("root");
 if (!root) throw new Error("application_root_missing");
 createRoot(root).render(
-  <AuthApp
-    runtime={runtime}
-    preferencesRuntime={preferencesRuntime}
-    subscriptionsRuntime={subscriptionsRuntime}
-    remindersRuntime={remindersRuntime}
-  />,
+  <ErrorBoundary>
+    <AuthApp
+      runtime={runtime}
+      preferencesRuntime={preferencesRuntime}
+      subscriptionsRuntime={subscriptionsRuntime}
+      remindersRuntime={remindersRuntime}
+    />
+  </ErrorBoundary>,
 );

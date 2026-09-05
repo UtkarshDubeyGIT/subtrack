@@ -47,9 +47,11 @@ platform evidence remain release-blocking.
 1. In the repository root, copy `.env.example` to `.env.local` and set the exact **HTTPS broker
    base URL**, including the fixed Supabase Edge Function path. The desktop Vite configuration
    explicitly loads this directory. Do not include a query, credential, fragment, or secret.
-2. Replace `https://replace-me.supabase.co` in the Tauri CSP and the full placeholder Edge Function
-   URL in the opener capability with that same deployment. Keep the opener path restricted to
-   `/v1/desktop/authorize`; do not add an origin wildcard.
+2. For installer candidates, set the production values in `.env.production.local`, then run
+   `npm run release:prepare` and use the generated Tauri config override as described in
+   [the release runbook](../releasing.md). It aligns the CSP and restricts the opener to
+   `/v1/desktop/authorize` with query parameters; no origin wildcard is granted. For development,
+   ensure renderer values and the chosen override point to the same environment.
 3. Register `subtrack://auth/callback` for both platform builds and in the broker allowlist.
 4. Configure Clerk only on the server-side broker. Use disposable test accounts and never paste
    tokens, codes, email addresses, or Clerk secret keys into logs/issues.

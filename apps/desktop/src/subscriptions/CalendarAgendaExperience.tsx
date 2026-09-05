@@ -113,7 +113,7 @@ function calendarRangeNotice(
     return {
       status: "truncated",
       title: "Calendar range is too dense to verify",
-      body: `More than 512 saved events match ${identity}. Projected charges stay hidden because correction truth is incomplete.`,
+      body: `More than 512 saved events match ${identity}. Narrow your search or filters to see a complete calendar.`,
       announcement: `Calendar range ${identity} is truncated and unavailable.`,
       retryable: true,
     };
@@ -374,8 +374,8 @@ export function CalendarAgendaExperience({
           <h3>What changes next</h3>
           <p>
             {rangeAuthoritative
-              ? `Projected from your private billing truth in ${timezone}. Dates stay on their calendar day.`
-              : `Checking saved correction truth in ${timezone} before showing this range.`}
+              ? `Based on your saved renewal dates in ${timezone}. Dates stay on their calendar day.`
+              : `Loading your saved dates in ${timezone} before showing this range.`}
           </p>
         </div>
         <nav className="month-navigation" aria-label="Calendar month">

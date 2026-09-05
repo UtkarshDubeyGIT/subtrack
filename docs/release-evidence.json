@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "macosArm64": { "status": "pending", "evidence": "" },
+  "macosIntel": { "status": "pending", "evidence": "" },
+  "windowsX64": { "status": "pending", "evidence": "" },
+  "hostedAuth": { "status": "pending", "evidence": "" },
+  "reminderScheduler": { "status": "pending", "evidence": "" },
+  "distributionTerms": { "status": "pending", "evidence": "" }
+}
