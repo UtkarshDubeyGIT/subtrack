@@ -1,173 +1,55 @@
-# Subtrack
+<div align="center">
+  <img src="apps/desktop/src-tauri/icons/128x128.png" alt="Subtrack" width="80" height="80" />
+  <h1>Know what renews next.</h1>
+  <p>A desktop home for your subscriptions, upcoming renewals, and recurring spending.<br />No bank connection. No inbox access. Just the details you choose to enter.</p>
+  <p><a href="docs/user-guide.md">Getting started</a> · <a href="docs/privacy.md">Privacy</a> · <a href="https://github.com/UtkarshDubeyGIT/subtrack/issues">Report a problem</a></p>
+</div>
 
-A privacy-first desktop subscription and renewal tracker. Subtrack tells you what renews next
-without ever touching your bank account or your inbox — every subscription is entered manually, by
-you.
+## Get Subtrack
 
-Built as a Tauri 2 + React 19 desktop application over a Supabase Postgres data plane, with
-authentication handled by Clerk through your system browser.
+**Subtrack is being prepared for its first public desktop release.** Public installers are not yet verified for distribution. Follow the [Releases page](https://github.com/UtkarshDubeyGIT/subtrack/releases) for availability. Workflow artifacts marked **candidate** are for platform testing.
 
-> **Status:** pre-1.0. The domain model, data plane, authentication, subscription management, and
-> renewal calendar are implemented and tested. Reminder _delivery_, FX rate ingestion, data export,
-> and account deletion are not yet shipped. See [Roadmap to 1.0](#roadmap-to-10).
+The first release targets **macOS (Apple silicon and Intel)** and **Windows (x64)**. Linux, mobile, and a browser app are not currently supported.
 
-## Why manual entry
+Once a verified release is available, download the installer for your computer, open Subtrack, and sign in through your browser. **You will not need Node.js, Rust, API keys, or a developer setup.**
 
-Most subscription trackers ask for read access to your bank feed or your email. Subtrack does not,
-and cannot — there is no integration to compromise, no third-party credential to store, and no
-transaction history leaving your machine. The tradeoff is that you enter subscriptions yourself.
-That tradeoff is the product.
+## One place for the next charge
 
-## Architecture
+- **Capture a subscription in a few fields.** Add the service, amount, billing cycle, and next renewal date. Track one-time access too.
+- **See what is coming.** Browse the renewal calendar and agenda, search services, and filter events.
+- **Understand recurring spending.** View monthly and annual equivalents. Missing exchange rates are called out, and those amounts are excluded from totals.
+- **Keep records up to date.** Edit dates, track trials, and mark subscriptions paused or canceled while retaining their history.
+- **Make it feel local.** Set your time zone, home currency, and date and number format.
 
-An npm workspaces monorepo.
+Subtrack records your decisions. **It does not cancel services, move money, or prevent a provider from charging you.** Manage billing directly with the provider.
 
-```
-apps/
-  desktop/            Tauri 2 shell + React 19 renderer
-    src/auth/         Clerk sign-in via system browser, deep-link ingress, session vault client
-    src/account/      Preferences and onboarding
-    src/subscriptions/Subscription management and renewal calendar
-    src-tauri/        Rust shell; OS keychain commands, deep-link and single-instance plugins
-packages/
-  domain/             Pure logic: money, recurrence, renewal, lifecycle. No I/O.
-  data/               Repositories over the Supabase Data API, Zod-validated on read and write
-  schemas/            Shared Zod schemas
-  design-tokens/      Design primitives
-  test-fixtures/      Shared test data
-supabase/
-  migrations/         Schema, RLS policies, and hardening migrations
-  functions/          Edge functions (currently the auth broker)
-  tests/              pgTAP suites
-  admin/              Environment-specific reviewed admin operations (not generic migrations)
-docs/security/        Threat model and operational runbooks
-scripts/              Hosted-configuration proof tooling
-```
+## Start with three subscriptions
 
-### Feature layering convention
+1. Sign in using your system browser and let it reopen Subtrack.
+2. Confirm your time zone, regional format, and home currency.
+3. Add the next three renewals you care about. Check their dates and prices against the provider.
 
-Each desktop feature is split three ways, and new features should follow the same shape:
+Use **⌘ N** on Mac or **Ctrl N** on Windows to add another subscription. The in-app **Help & privacy** panel is available before and after sign-in.
 
-| File               | Responsibility                                                        |
-| ------------------ | --------------------------------------------------------------------- |
-| `*-runtime.ts`     | State machine and behaviour. Framework-free and unit-tested directly. |
-| `*-composition.ts` | Wiring: builds a runtime from environment and transport dependencies. |
-| `*Experience.tsx`  | React rendering only.                                                 |
+## Your data, clearly explained
 
-### Security model
+You enter subscriptions manually. Subtrack does not ask for access to your bank or inbox. Your subscription records and preferences **sync to an online account**; this is not a local-only app. Sign-in uses Clerk, and application data is stored through Supabase. Device session credentials use macOS Keychain or Windows Credential Manager.
 
-Three properties carry most of the weight. All three are enforced, not merely documented.
+An internet connection is required to sign in, load, and save records. Read [Privacy and data handling](docs/privacy.md) before entering personal information.
 
-- **Ownership derives from the verified token.** Row-level security resolves the owner from the
-  Clerk session token's `sub` claim via `private.current_clerk_subject()`. Policies never consult
-  `user_metadata` or `auth.role()`.
-- **The data plane fails closed.** Authorization additionally requires an exact issuer match
-  against the single row in `private.clerk_identity_authority`. That row is deliberately absent
-  from generic migrations — each environment must set it through a reviewed admin operation. With
-  no row, every request is denied.
-- **Secrets never reach the renderer.** Session material lives in the OS keychain behind three Rust
-  commands. A service-role key must never appear in a `VITE_`-prefixed variable or the app bundle;
-  `npm run security:config` guards this.
+## Current limits
 
-Some tables are intentionally read-only to clients. `reminder_deliveries` and `fx_rates` grant
-`select` to `authenticated` and all writes to `service_role` only, so reminder computation and FX
-ingestion must run server-side. This is by design; do not relax those policies to make a feature
-easier.
+- Scheduled reminders require a configured server scheduler. The app checks due reminders while it is **open and online**. Notifications depend on device support and permission; email and closed-app delivery are unavailable.
+- Automatic exchange-rate ingestion is not connected. Amounts without rates remain visible in their original currencies and are excluded from converted totals.
+- Account export, account deletion, and in-app changes to sign-in security methods are unavailable. Individual subscriptions can be permanently deleted.
+- Automatic updates are unavailable. Future updates will be distributed through the official Releases page.
 
-Read before changing authentication or the data plane:
+## Help and feedback
 
-- [`docs/security/threat-model.md`](docs/security/threat-model.md)
-- [`docs/security/cloud-data-plane.md`](docs/security/cloud-data-plane.md)
-- [`docs/security/auth-broker.md`](docs/security/auth-broker.md)
-- [`docs/security/auth-risk-gate.md`](docs/security/auth-risk-gate.md) — **read this before
-  configuring a development broker or using real Clerk test credentials**
-- [`docs/security/hosted-clerk-proof.md`](docs/security/hosted-clerk-proof.md)
+Read the [user guide](docs/user-guide.md) for installation, reminders, and troubleshooting. [Report a problem](https://github.com/UtkarshDubeyGIT/subtrack/issues/new?template=bug-report.yml) with your operating system, app version, and steps to reproduce it. Public reports should never contain account details, subscription records, passwords, or tokens.
 
-## Prerequisites
+## Working on Subtrack
 
-| Requirement                          | Needed for                                                                   |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| Node.js 22                           | All JavaScript tooling (CI pins 22; some dev dependencies reject 24.0–24.14) |
-| Rust stable + platform prerequisites | Building or running the Tauri shell                                          |
-| Docker                               | Local Supabase, `test:db`, and pgTAP suites                                  |
-| Supabase CLI                         | Local stack and hosted configuration reconciliation                          |
-| `cargo-audit`, `gitleaks`            | The two corresponding security scripts                                       |
+Developer instructions live in [Development](docs/development.md). Maintainers should use the [release runbook](docs/releasing.md), including its required native sign-in and signing evidence, before distributing installers.
 
-Platform support is currently macOS and Windows — the keychain integration enables only the Apple
-and Windows native backends.
-
-## Setup
-
-```sh
-npm ci
-cp .env.example .env
-```
-
-Then fill in `.env`:
-
-| Variable                        | Meaning                                                    |
-| ------------------------------- | ---------------------------------------------------------- |
-| `VITE_AUTH_BROKER_URL`          | Exact HTTPS base URL of the auth broker. No secrets.       |
-| `VITE_SUPABASE_URL`             | Supabase project URL                                       |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable key. **Never** a service-role key.             |
-| `CLERK_FRONTEND_API_DOMAIN`     | Clerk Frontend API domain, used by third-party auth config |
-
-The Supabase host also appears in two static files that cannot read environment variables at
-runtime, and both must match your environment or the packaged app will fail:
-
-- `apps/desktop/src-tauri/tauri.conf.json` → `app.security.csp` → `connect-src`
-- `apps/desktop/src-tauri/capabilities/main.json` → `opener:allow-open-url` allowlist
-
-## Development
-
-```sh
-npm run supabase:start           # local Supabase (requires Docker)
-cd apps/desktop && npm run tauri dev
-```
-
-Running the renderer alone with `npm run dev` inside `apps/desktop` works for UI iteration, but
-authentication and the keychain require the Tauri shell.
-
-## Checks
-
-```sh
-npm run check                    # format:check + lint + typecheck + test + security:config
-npm test                         # unit and component tests
-npm run typecheck
-npm run build
-
-npm run test:db                  # pgTAP via Supabase CLI
-npm run test:pgtap:full          # full pgTAP suite
-npm run test:migration-chain     # renewal migration chain
-
-npm run security:deps:js         # npm audit --audit-level=high
-npm run security:deps:rust       # cargo audit
-npm run security:secrets         # gitleaks
-npm run security:config          # asserts no secret or placeholder leaks into the bundle
-```
-
-`npm run check` must pass before every pull request. ESLint runs with `--max-warnings=0` and
-Prettier formatting is enforced.
-
-Database behaviour changes require pgTAP coverage wired into `tests/run-full-pgtap.sh`. Changes to
-authentication or the data plane require the corresponding `docs/security/*.md` runbook to be
-updated in the same change — those documents are operational, and letting them drift is itself a
-security problem.
-
-## Roadmap to 1.0
-
-| Area                                               | State                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------- |
-| Domain model, data plane, RLS, pgTAP suites        | Implemented                                                   |
-| Clerk sign-in, auth broker, keychain session vault | Implemented                                                   |
-| Subscription create / edit / lifecycle / delete    | Implemented                                                   |
-| Renewal calendar with server-bounded queries       | Implemented                                                   |
-| Preferences and onboarding                         | Implemented                                                   |
-| Reminder computation and delivery                  | **Not shipped** — schema exists, nothing computes or delivers |
-| FX rate ingestion and converted spend totals       | **Not shipped** — table and repository exist, no feed         |
-| Data export and account deletion                   | **Not shipped**                                               |
-| Signed installers and auto-update                  | **Not shipped**                                               |
-
-## License
-
-Not yet licensed for redistribution.
+Built with Tauri, React, and TypeScript. Source is available for inspection; **no redistribution license has been granted yet**.

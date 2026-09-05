@@ -2033,3 +2033,67 @@ kbd {
   background: transparent;
   color: var(--ink);
 }
+
+.settings-panel,
+.help-panel {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--paper);
+}
+
+summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 720;
+  min-height: 2rem;
+}
+
+summary:focus-visible,
+a:focus-visible {
+  outline: 3px solid #7b97ff;
+  outline-offset: 3px;
+}
+
+.settings-panel[open] > summary,
+.help-panel[open] > summary {
+  margin-bottom: 1.25rem;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 2rem;
+}
+
+.help-grid h2 {
+  font-size: 1.1rem;
+}
+
+.help-grid p,
+.help-grid li,
+.preferences-form small {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.help-grid ol {
+  padding-left: 1.25rem;
+}
+
+.email-choice:has(input:disabled) {
+  color: var(--muted);
+}
+
+.email-choice input:disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+}

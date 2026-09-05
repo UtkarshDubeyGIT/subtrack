@@ -368,10 +368,7 @@ export function SubscriptionExperience({
         <div>
           <p className="eyebrow">PRIVATE RENEWAL LEDGER</p>
           <h2 id="subscriptions-heading">Subscriptions</h2>
-          <p>
-            Capture billing truth once, then keep every status and correction
-            visible.
-          </p>
+          <p>Add your subscriptions and see their next renewal at a glance.</p>
         </div>
         <button
           ref={quickAddButton}
@@ -554,9 +551,7 @@ export function SubscriptionExperience({
           ) : (
             <div className="detail-placeholder">
               <span aria-hidden="true">↗</span>
-              <p>
-                Select a subscription to view its billing truth and history.
-              </p>
+              <p>Select a subscription to see its details and history.</p>
             </div>
           )}
         </aside>
@@ -765,7 +760,7 @@ function SubscriptionDetail({
       >
         <h4 id="renewal-history-heading">Renewal history</h4>
         {history.status === "idle" ? (
-          <p>Select this item to load retained history.</p>
+          <p>Select this item to see its history.</p>
         ) : history.status === "loading" ? (
           <p>Loading renewal history…</p>
         ) : (
@@ -1269,8 +1264,9 @@ function LifecycleDialog({
         <p className="eyebrow">STATUS CHANGE</p>
         <h2 id="lifecycle-dialog-title">{`${action} ${state.serviceName}`}</h2>
         <p>
-          This updates billing truth through the retained lifecycle history. It
-          does not erase earlier records.
+          This only updates your record in Subtrack. To stop or change actual
+          charges, manage the subscription with the service provider. Your
+          earlier history stays available.
         </p>
         <form onSubmit={onSubmit}>
           <fieldset disabled={pending}>

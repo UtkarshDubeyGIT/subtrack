@@ -8,6 +8,7 @@ export default defineConfig({
       "packages/**/*.test.{ts,tsx}",
       "supabase/**/*.test.{ts,tsx}",
       "tests/**/*.test.{ts,tsx}",
+      "scripts/**/*.test.mjs",
     ],
   },
 });

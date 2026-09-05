@@ -81,12 +81,14 @@ describe("AuthApp", () => {
         })}
       />,
     );
-    expect(html).toContain("Authentication broker is not configured.");
-    expect(html).toContain("rebuild and reinstall Subtrack");
+    expect(html).toContain(
+      "Subtrack could not connect to its sign-in service.",
+    );
+    expect(html).toContain("Install the latest official version");
     expect(html).not.toContain("Check configuration again");
     expect(html).toContain("Private renewal planning");
     expect(html).not.toContain("risk gate has not passed");
-    expect(html).not.toContain("Sign in");
+    expect(html).not.toContain("Continue in system browser");
   });
 
   it("offers only the system-browser flow when configured and signed out", () => {
@@ -94,7 +96,7 @@ describe("AuthApp", () => {
       <AuthApp runtime={runtime({ status: "signed_out" })} />,
     );
     expect(html).toContain("Continue in system browser");
-    expect(html).not.toMatch(/email|verification code/i);
+    expect(html).not.toMatch(/input[^>]+type="email"|verification code/i);
   });
 
   it("shows an interruptible verification state without identity data", () => {
@@ -150,12 +152,12 @@ describe("AuthApp", () => {
 
     expect(html).toContain("Welcome to Subtrack");
     expect(html).toContain("Time zone");
-    expect(html).toContain("Locale");
+    expect(html).toContain("Date and number format");
     expect(html).toContain("Home currency");
     expect(html).toContain("Reminder lead times");
-    expect(html).toContain("Email fallback");
-    expect(html).toContain("webview blocks notification prompts");
-    expect(html).toContain("Due reminders still appear in the ledger");
+    expect(html).toContain("Email reminders · Coming later");
+    expect(html).toContain("Notifications are blocked on this device");
+    expect(html).toContain("while it is open and online");
     expect(html).toContain("Save and continue");
     expect(html).not.toContain("user_secret_123");
   });
@@ -186,13 +188,13 @@ describe("AuthApp", () => {
     expect(html).toContain("Europe/Paris");
     expect(html).toContain('value="BRL"');
     expect(html).toContain("Preferences saved.");
-    expect(html).toContain("webview currently allows notification prompts");
+    expect(html).toContain("Notifications are allowed on this device");
     expect(html).toContain(
-      "Due reminders notify here and also appear in the ledger",
+      "Scheduled reminders are checked while Subtrack is open and online",
     );
-    expect(html).toContain("Passkey and MFA controls stay unavailable");
-    expect(html).toContain("not available in this build");
-    expect(html).toContain("server-validated recent verification");
+    expect(html).toContain("changes to sign-in security methods");
+    expect(html).toContain("not available in this version");
+    expect(html).toContain("permanently delete individual subscriptions");
     expect(html).toContain("1 day before");
     expect(html).not.toContain("1 days before");
     expect(html).toContain("Sign out");
@@ -261,8 +263,8 @@ describe("AuthApp", () => {
       />,
     );
 
-    expect(html).toContain("Update the data-sync configuration");
-    expect(html).toContain("rebuild and reinstall Subtrack");
+    expect(html).toContain("report an installation issue");
+    expect(html).toContain("Install the latest official version");
     expect(html).not.toContain("Reload preferences");
   });
 });

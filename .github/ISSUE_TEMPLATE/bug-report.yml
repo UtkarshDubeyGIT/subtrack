@@ -1,0 +1,27 @@
+name: Report a problem
+description: Something is not working in Subtrack.
+body:
+  - type: markdown
+    attributes:
+      value: "This report is public. Do not include account details, subscription records, credentials, tokens, or unredacted screenshots."
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: The version in the installer filename or release you downloaded.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and chip
+      placeholder: "For example: macOS 15, Apple M2; Windows 11, x64"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, what happened, and what did you expect?
+    validations:
+      required: true

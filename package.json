@@ -1,6 +1,6 @@
 {
   "name": "subtrack",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "npm@10.9.8",
@@ -33,7 +33,9 @@
     "admin:clerk-authority:subtrack-dev": "supabase db query --linked --file supabase/admin/subtrack-dev/set-clerk-identity-authority.sql",
     "prove:hosted-clerk:subtrack-dev": "node scripts/hosted-clerk-proof/cli.mjs",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --pretty false"
+    "typecheck": "tsc -b --pretty false",
+    "release:prepare": "node scripts/release/prepare.mjs",
+    "release:check": "node scripts/release/check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.32.0",
